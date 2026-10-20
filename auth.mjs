@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID, createHash, createPublicKey, verify, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, writeFile, rename, chmod, unlink } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, chmod, unlink, open } from 'node:fs/promises';
 import path from 'node:path';
 
 const ISSUER = 'https://auth.openai.com';
@@ -15,9 +15,20 @@ export function equalState(a, b) {
 export async function atomicJSON(file, value) {
   await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
   const temp = `${file}.${randomUUID()}.tmp`;
-  await writeFile(temp, JSON.stringify(value), { mode: 0o600, flag: 'wx' });
-  await rename(temp, file);
-  await chmod(file, 0o600);
+  let handle;
+  try {
+    handle = await open(temp, 'wx', 0o600);
+    await handle.writeFile(JSON.stringify(value));
+    await handle.sync();
+    await handle.close(); handle = null;
+    await rename(temp, file);
+    // Persist the directory entry as well as the file before acknowledging a save.
+    const directory = await open(path.dirname(file), 'r');
+    try { await directory.sync(); } finally { await directory.close(); }
+  } finally {
+    if (handle) await handle.close();
+    await unlink(temp).catch(e => { if (e.code !== 'ENOENT') throw e; });
+  }
 }
 export async function readJSON(file) {
   try { return JSON.parse(await readFile(file, 'utf8')); }

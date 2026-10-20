@@ -64,7 +64,7 @@ review rather than independent practice.
 The included **Go APIs & OAuth** project takes a complete Go beginner toward a
 FHIR integration service through **34 concepts mapped to eight tickets**.
 Four original foundation lessons ship with the app; additional lessons are
-generated on request. The source includes **15 automated tests**, and the
+generated on request. The source includes **17 automated tests**, and the
 app has no third-party npm dependencies.
 
 This is a working early prototype, not a claim of validated learning outcomes
@@ -171,6 +171,19 @@ whole course.
   becomes available after an attempt.
 - **Modify:** make a guided change, run tests, and reveal hints as needed.
 - **Practice:** solve a different task checked against multiple inputs.
+
+Progress is stored on the server's filesystem in `.local/library.json`, outside
+browser storage. Saves use a synced temporary file, atomic replacement, and a
+synced directory before the UI confirms **SAVED TO DISK**. A previous complete
+snapshot lives in `.local/library.json.backup` and is recovered automatically
+if the primary file is missing or invalid JSON. Writes are serialized.
+
+The editor autosaves after 600 ms of inactivity and attempts a final save when
+the tab is hidden or closed. An abrupt kill can lose edits that have not yet
+been acknowledged. Disk sync improves crash durability; hardware failure and
+deletion of the app's data folder still require an external backup. Back up the
+`.local` folder privately (for example with Time Machine); it includes account
+credentials and must never be committed or shared.
 
 Progress tracks drafts, predictions, passed exercises, hints, and revealed
 solutions. A solution reveal counts as review rather than independent

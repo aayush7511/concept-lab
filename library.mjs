@@ -28,8 +28,24 @@ export function publicLesson(l){if(!l)return null;const out=structuredClone(l);f
 const clean=s=>s.replace(/\r\n/g,'\n').trimEnd();
 export class Library{
  constructor({directory,ai,runner}){this.directory=directory;this.ai=ai;this.runner=runner;this.inflight=new Map();this.writes=Promise.resolve();}
- async init(){this.data=await readJSON(path.join(this.directory,'library.json'))||{projects:[],lessons:{},progress:{}};if(!this.data.projects.some(p=>p.id==='minifhir')){const p=structuredClone(minifhir);p.spec=await readFile(new URL('./examples/minifhir/SPEC.md',import.meta.url),'utf8');this.data.projects.unshift(p);}if(this.data.seedVersion!==2){const seed=this.data.projects.find(p=>p.id==='minifhir');seed.concepts=structuredClone(minifhir.concepts);seed.tickets=structuredClone(minifhir.tickets);if(this.data.lessons['minifhir:flow']?.title.includes('for Loop')){this.data.lessons['minifhir:loops']={...this.data.lessons['minifhir:flow'],id:'loops'};delete this.data.lessons['minifhir:flow'];}this.data.seedVersion=2;}for(const [id,l]of Object.entries(builtins)){const key=`minifhir:${id}`;this.data.lessons[key]??=structuredClone(l);if(!this.data.lessons[key].prediction.code)this.data.lessons[key].prediction=structuredClone(l.prediction);}await this.save();}
- save(){const data=structuredClone(this.data);const next=this.writes.catch(()=>{}).then(()=>atomicJSON(path.join(this.directory,'library.json'),data));this.writes=next;return next;}
+ async init(){
+  const file=path.join(this.directory,'library.json');
+  let saved;
+  try{saved=await readJSON(file);}catch(e){if(!(e instanceof SyntaxError))throw e;const backup=await readJSON(file+'.backup');if(!backup)throw e;saved=backup;}
+  if(!saved)saved=await readJSON(file+'.backup');
+  this.lastSaved=saved?structuredClone(saved):null;
+  this.data=saved||{projects:[],lessons:{},progress:{}};if(!this.data.projects.some(p=>p.id==='minifhir')){const p=structuredClone(minifhir);p.spec=await readFile(new URL('./examples/minifhir/SPEC.md',import.meta.url),'utf8');this.data.projects.unshift(p);}if(this.data.seedVersion!==2){const seed=this.data.projects.find(p=>p.id==='minifhir');seed.concepts=structuredClone(minifhir.concepts);seed.tickets=structuredClone(minifhir.tickets);if(this.data.lessons['minifhir:flow']?.title.includes('for Loop')){this.data.lessons['minifhir:loops']={...this.data.lessons['minifhir:flow'],id:'loops'};delete this.data.lessons['minifhir:flow'];}this.data.seedVersion=2;}for(const [id,l]of Object.entries(builtins)){const key=`minifhir:${id}`;this.data.lessons[key]??=structuredClone(l);if(!this.data.lessons[key].prediction.code)this.data.lessons[key].prediction=structuredClone(l.prediction);}await this.save();}
+ save(){
+  const data=structuredClone(this.data);
+  const next=this.writes.catch(()=>{}).then(async()=>{
+   const file=path.join(this.directory,'library.json');
+   // Retain a complete previous snapshot before atomically replacing the current one.
+   await atomicJSON(file+'.backup',this.lastSaved||data);
+   await atomicJSON(file,data);
+   this.lastSaved=data;
+  });
+  this.writes=next;return next;
+ }
  project(id){const p=this.data.projects.find(p=>p.id===id);if(!p)throw Error('Project not found.');return p;}
  get(project,id){this.project(project);return this.data.lessons[`${project}:${id}`]||null;}
  async importProject({title,language,spec,model}){
