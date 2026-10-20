@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {readRequestJSON} from './request.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
@@ -15,7 +16,7 @@ const session=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function messagePage(res,status,title,message){res.writeHead(status,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"});res.end(`<!doctype html><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:18px system-ui;background:#10141d;color:#eee;max-width:700px;margin:15vh auto;padding:24px}a{color:#b8ed82}</style><h1>${esc(title)}</h1><p>${esc(message)}</p><a href="/">Open Concept Lab →</a>`);}
-async function body(req){let s='';for await(const chunk of req){s+=chunk;if(s.length>256000)throw Error('Request is too large.');}try{return s?JSON.parse(s):{};}catch{throw Error('Invalid JSON request.');}}
+
 const server=http.createServer(async(req,res)=>{
  try{
   if(req.headers.host!==`${host}:${port}`){res.writeHead(403);return res.end('Invalid host');}
@@ -24,7 +25,7 @@ const server=http.createServer(async(req,res)=>{
   if(url.pathname==='/auth/callback'&&req.method==='GET'){try{const s=await auth.complete(url.searchParams);ai.catalog=null;messagePage(res,200,'ChatGPT connected',s.message);}catch(e){auth.lastMessage=e.message;messagePage(res,400,'Sign-in did not complete',e.message);}return;}
   if(req.method==='POST'){
    if(req.headers.origin!==origin||!cookie||req.headers['x-csrf-token']!==csrf)return json(res,403,{error:'Reload Concept Lab and try again.'});
-   const b=await body(req);
+   const b=await readRequestJSON(req);
    switch(url.pathname){
     case '/api/auth/start':return json(res,200,{url:await auth.begin()});
     case '/api/auth/disconnect':ai.catalog=null;return json(res,200,await auth.disconnect());

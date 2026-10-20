@@ -5,7 +5,7 @@ root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
 out=root/'releases'/f'concept-lab-macos-source-{version}.zip'
 out.parent.mkdir(exist_ok=True)
-files=['package.json','.gitignore','LICENSE','README.md','CONTRIBUTING.md','SECURITY.md','THIRD_PARTY_NOTICES.md','start.command','server.mjs','auth.mjs','ai.mjs','library.mjs','curriculum.mjs','runner.mjs','runtimes.mjs','auth.test.mjs','core.test.mjs','library.test.mjs']
+files=['package.json','.gitignore','LICENSE','README.md','CONTRIBUTING.md','SECURITY.md','THIRD_PARTY_NOTICES.md','start.command','server.mjs','request.mjs','auth.mjs','ai.mjs','library.mjs','curriculum.mjs','runner.mjs','runtimes.mjs','auth.test.mjs','core.test.mjs','library.test.mjs']
 paths=[root/f for f in files]
 for folder in ['public','examples/minifhir','runtime/sync','scripts']:
  paths.extend(f for f in (root/folder).rglob('*') if f.is_file())

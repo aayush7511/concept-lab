@@ -42,3 +42,43 @@ test('a corrupt or missing primary file recovers the previous complete snapshot'
   assert.equal(l.progress('minifhir','functions').drafts.guided,'recover this draft');
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('large specifications and long generated ticket titles import without truncation',async()=>{
+ const {MAX_SPEC_CHARACTERS,MAX_TICKET_TITLE_CHARACTERS}=await import('./library.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'concept-large-spec-'));
+ const spec='x'.repeat(MAX_SPEC_CHARACTERS-2)+'😀';
+ const plan=structuredClone((await import('./curriculum.mjs')).minifhir);
+ plan.tickets[0].title='t'.repeat(MAX_TICKET_TITLE_CHARACTERS);
+ let calls=0;
+ const ai={async complete(request){calls++;assert.equal(JSON.parse(request.input[0].content).tickets,spec);return {text:JSON.stringify(plan),model:'synthetic'};}};
+ try{
+  let l=new Library({directory:dir,ai,runner:null});await l.init();
+  const imported=await l.importProject({title:'Large project',language:'go',spec});
+  assert.equal(calls,1);assert.equal(imported.spec,spec);
+  l=new Library({directory:dir,ai,runner:null});await l.init();
+  assert.equal(l.project(imported.id).spec,spec);
+  assert.equal(l.project(imported.id).tickets[0].title.length,MAX_TICKET_TITLE_CHARACTERS);
+  await assert.rejects(l.importProject({title:'Too large',language:'go',spec:spec+'x'}),/1,000,000-character limit/);
+  assert.equal(calls,1,'oversized input must fail before consuming AI allowance');
+  const {validatePlan}=await import('./library.mjs');
+  plan.tickets[0].title+='x';assert.throws(()=>validatePlan(plan),/10,000-character limit/);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('request parsing accepts large escaped JSON and split UTF-8 without corruption',async()=>{
+ const {readRequestJSON}=await import('./request.mjs');
+ const {Readable}=await import('node:stream');
+ const spec='\u0001'.repeat(999998)+'😀';
+ const buffer=Buffer.from(JSON.stringify({spec}));
+ assert.ok(buffer.length>256000);
+ const emoji=buffer.indexOf(Buffer.from('😀'));
+ const chunks=[buffer.subarray(0,emoji+1),buffer.subarray(emoji+1,emoji+2),buffer.subarray(emoji+2)];
+ assert.equal((await readRequestJSON(Readable.from(chunks))).spec,spec);
+});
+
+test('request parsing enforces byte limits and reports malformed JSON',async()=>{
+ const {readRequestJSON}=await import('./request.mjs');
+ const {Readable}=await import('node:stream');
+ await assert.rejects(readRequestJSON(Readable.from([Buffer.alloc(11)]),{maxBytes:10}),/10-byte limit/);
+ await assert.rejects(readRequestJSON(Readable.from(['{'])),/Invalid JSON/);
+});

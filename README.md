@@ -64,7 +64,7 @@ review rather than independent practice.
 The included **Go APIs & OAuth** project takes a complete Go beginner toward a
 FHIR integration service through **34 concepts mapped to eight tickets**.
 Four original foundation lessons ship with the app; additional lessons are
-generated on request. The source includes **17 automated tests**, and the
+generated on request. The source includes **20 automated tests**, and the
 app has no third-party npm dependencies.
 
 This is a working early prototype, not a claim of validated learning outcomes
@@ -190,7 +190,11 @@ solutions. A solution reveal counts as review rather than independent
 practice. Tutor chat history currently resets on reload.
 
 **Import tickets** accepts Go, Python, or JavaScript project specifications,
-with up to 30 tickets and 70 concepts. Paths are checked for valid prerequisite
+with specifications up to 1,000,000 characters, up to 30 tickets, and 70 concepts.
+The full specification is retained without truncation. Generated ticket titles
+accept up to 10,000 characters; the generator is asked to keep them concise.
+The selected model’s context window and account allowance can impose a lower
+practical input limit; importing a large spec can use substantial allowance. Paths are checked for valid prerequisite
 references and ordering. Lesson examples, prediction outputs, reference
 answers, and failing starters are execution-checked before saving. These
 checks help catch broken exercises; they do not certify every explanation or
