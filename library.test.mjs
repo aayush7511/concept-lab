@@ -82,3 +82,31 @@ test('request parsing enforces byte limits and reports malformed JSON',async()=>
  await assert.rejects(readRequestJSON(Readable.from([Buffer.alloc(11)]),{maxBytes:10}),/10-byte limit/);
  await assert.rejects(readRequestJSON(Readable.from(['{'])),/Invalid JSON/);
 });
+
+function visualLearn(){return {overview:'A variable gives a value a reusable name.',goals:['Create a variable.','Use its value.'],diagram:{title:'From value to output',steps:[{label:'Value',detail:'Start with a number.'},{label:'Name',detail:'Bind it to a name.'},{label:'Use',detail:'Print the named value.'}]},sections:[{heading:'Give a value a name',points:['Assignment binds a name to a value.','Use `=` between the name and the value.'],code:'count = 3'},{heading:'Use the name',points:['Read its value with the name.','Pass it to `print`.'],code:'print(count)'}],misconception:'Assignment does not print a value.',takeaway:'A name lets you reuse a value.',tryIt:'Change count from 3 to 5, then run the example.'};}
+
+test('structured Learn rejects oversized prose and requires a visual model',async()=>{
+ const {validateLesson}=await import('./library.mjs');
+ const {builtins}=await import('./curriculum.mjs');
+ const lesson={...structuredClone(builtins.functions),learn:visualLearn()};
+ assert.equal(validateLesson(lesson,'go',{requireStructured:true}),lesson);
+ lesson.learn.sections[0].points[0]='x'.repeat(241);
+ assert.throws(()=>validateLesson(lesson,'go'),/240 characters/);
+ lesson.learn=visualLearn();delete lesson.learn.diagram;
+ assert.throws(()=>validateLesson(lesson,'go'),/visual model/);
+ delete lesson.learn;
+ assert.doesNotThrow(()=>validateLesson(lesson,'go'),'cached paragraph lessons remain compatible');
+ assert.throws(()=>validateLesson(lesson,'go',{requireStructured:true}),/structured Learn/);
+});
+
+test('structured Learn renders semantic cards and a diagram while escaping generated content',async()=>{
+ const {renderStructuredLearn}=await import('./public/learn.js');
+ const learn=visualLearn();learn.sections[0].points[0]='Use `<img src=x onerror=alert(1)>` as text.';
+ const html=renderStructuredLearn(learn);
+ assert.match(html,/<figure class="learn-diagram">/);
+ assert.match(html,/<figcaption>From value to output<\/figcaption>/);
+ assert.equal((html.match(/class="learn-section learn-card"/g)||[]).length,2);
+ assert.match(html,/<pre class="learn-snippet"><code>count = 3<\/code>/);
+ assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
+ assert.ok(!html.includes('<img'));
+});

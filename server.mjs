@@ -45,7 +45,7 @@ const server=http.createServer(async(req,res)=>{
     case '/api/tutor':{
      if(tutorBusy)throw Error('Wait for the current tutor response.');
      const l=library.get(b.project,b.id);if(!l)throw Error('Open a lesson first.');if(typeof b.message!=='string'||!b.message.trim()||b.message.length>6000)throw Error('Enter a question under 6,000 characters.');
-     const context={lesson:l.title,concept:library.project(b.project).concepts.find(c=>c.id===b.id),explanation:l.explanation,exercise:['guided','practice'].includes(b.stage)?l[b.stage].prompt:'Explore the example',stage:b.stage,code:String(b.code||'').slice(0,40000),lastResult:library.progress(b.project,b.id).lastResult};
+     const context={lesson:l.title,concept:library.project(b.project).concepts.find(c=>c.id===b.id),explanation:l.explanation,learn:l.learn,exercise:['guided','practice'].includes(b.stage)?l[b.stage].prompt:'Explore the example',stage:b.stage,code:String(b.code||'').slice(0,40000),lastResult:library.progress(b.project,b.id).lastResult};
      const history=(Array.isArray(b.history)?b.history:[]).slice(-8).filter(m=>['user','assistant'].includes(m.role)&&typeof m.content==='string').map(m=>({role:m.role,content:m.content.slice(0,8000)}));
      tutorBusy=true;res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-store','X-Accel-Buffering':'no'});
      const send=data=>res.write(`data: ${JSON.stringify(data)}\n\n`);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),180000);res.on('close',()=>controller.abort());
@@ -66,7 +66,7 @@ const server=http.createServer(async(req,res)=>{
    res.setHeader('Set-Cookie',`concept_session=${session}; HttpOnly; SameSite=Strict; Path=/`);
    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});return res.end(await readFile(path.join(directory,'public',pages[url.pathname])));
   }
-  if(req.method==='GET'&&['/app.js','/style.css','/connect.js','/connect.css'].includes(url.pathname)){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.js')?'text/javascript':'text/css','Cache-Control':'no-cache'});return res.end(await readFile(path.join(directory,'public',url.pathname)));}
+  if(req.method==='GET'&&['/app.js','/learn.js','/style.css','/connect.js','/connect.css'].includes(url.pathname)){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.js')?'text/javascript':'text/css','Cache-Control':'no-cache'});return res.end(await readFile(path.join(directory,'public',url.pathname)));}
   json(res,404,{error:'Not found'});
  }catch(e){if(!res.headersSent)json(res,400,{error:e.message||'Request failed.'});else res.end();}
 });

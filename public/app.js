@@ -1,3 +1,4 @@
+import {renderStructuredLearn} from './learn.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const state={csrf:'',projects:[],allProgress:{},project:null,id:null,lesson:null,progress:{drafts:{},hints:{},passes:{}},stage:'learn',model:'',history:[],busy:false,draftTimer:null,load:0};
 const stages=['learn','predict','guided','practice'];
@@ -54,8 +55,12 @@ function renderLearn(l){
   structs:{label:'From a type to a record',rows:[['type Reader struct { … }','Define the shape of a record, with named fields and their types.'],['Reader{Name: "Maya"}','Create one record. Omitted fields receive their zero values.'],['reader.Name','Use a dot to select a field from this particular record.']],remember:'The type describes the shape. A value is one actual record with that shape.'}
  };
  const custom=state.project.id==='minifhir'?breakdowns[l.id]:null;
- let html=`<div class="learn-overview"><span class="learn-kicker">THE IDEA</span><p>${learnInline(l.explanation[0])}</p></div>`;
- if(custom){
+ const intro=l.explanation[0],firstSentence=intro.match(/^.*?[.!?](?:\s|$)/s)?.[0]?.trim();
+ const shortIntro=intro.length>320&&firstSentence?firstSentence:intro;
+ let html=`<div class="learn-overview"><span class="learn-kicker">THE IDEA</span><p>${learnInline(shortIntro)}</p></div>`;
+ if(shortIntro!==intro)html+=`<details class="learn-details"><summary>More about the idea</summary><p>${learnInline(intro.slice(shortIntro.length).trim())}</p></details>`;
+ if(l.learn){html=renderStructuredLearn(l.learn);}
+ else if(custom){
   html+=`<section class="learn-section"><h3>${esc(custom.label)}</h3><dl class="syntax-breakdown">${custom.rows.map(([code,meaning])=>`<div><dt><code>${esc(code)}</code></dt><dd>${learnInline(meaning)}</dd></div>`).join('')}</dl></section>`;
   html+=`<aside class="learn-takeaway"><span>REMEMBER</span><p>${learnInline(custom.remember)}</p></aside>`;
   html+=`<details class="learn-details"><summary>A little more detail</summary>${l.explanation.slice(1).map(p=>`<p>${learnInline(p)}</p>`).join('')}</details>`;
@@ -69,7 +74,7 @@ function renderLearn(l){
   }).join('');
  }
  if(l.example.notes?.length)html+=`<section class="learn-section"><h3>Walk through the example</h3><ol class="example-walkthrough">${l.example.notes.map(note=>{const match=note.match(/^(Line[s]? [\d–\-, ]+):\s*(.*)$/s);return `<li>${match?`<span class="walkthrough-line">${esc(match[1])}</span>${learnInline(match[2])}`:learnInline(note)}</li>`;}).join('')}</ol></section>`;
- html+=`<section class="learn-try"><span>TRY IT NOW</span><p>Run the example on the right. Change one value, predict the result, and run it again.</p></section><div class="learn-project-link"><span>BACK TO YOUR PROJECT</span><p>${learnInline(concept().why)}</p></div>`;
+ html+=`<section class="learn-try"><span>TRY IT NOW</span><p>${learnInline(l.learn?.tryIt||'Run the example on the right. Change one value, predict the result, and run it again.')}</p></section><div class="learn-project-link"><span>BACK TO YOUR PROJECT</span><p>${learnInline(concept().why)}</p></div>`;
  return html;
 }
 function renderStage(){const l=state.lesson,s=state.stage;if(!l)return;

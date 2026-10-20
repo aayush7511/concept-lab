@@ -64,7 +64,7 @@ review rather than independent practice.
 The included **Go APIs & OAuth** project takes a complete Go beginner toward a
 FHIR integration service through **34 concepts mapped to eight tickets**.
 Four original foundation lessons ship with the app; additional lessons are
-generated on request. The source includes **20 automated tests**, and the
+generated on request. The source includes **22 automated tests**, and the
 app has no third-party npm dependencies.
 
 This is a working early prototype, not a claim of validated learning outcomes
@@ -166,7 +166,10 @@ Four original foundation lessons are ready immediately. Other lessons are
 generated on demand and cached; generation never automatically runs the
 whole course.
 
-- **Learn:** read a structured explanation and run an editable example.
+- **Learn:** explore a short overview, learning goals, connected-box visual model,
+  focused concept cards, code snippets, a common mistake, and a specific change
+  to try in the editable example. New lessons validate per-section length limits;
+  previously cached lessons retain their compatible display.
 - **Predict:** trace a different program before submitting a guess. Run
   becomes available after an attempt.
 - **Modify:** make a guided change, run tests, and reveal hints as needed.
