@@ -110,3 +110,27 @@ test('structured Learn renders semantic cards and a diagram while escaping gener
  assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
  assert.ok(!html.includes('<img'));
 });
+
+test('exercise statements validate examples and escape model-supplied problem text',async()=>{
+ const {validateProblem,renderProblem}=await import('./public/problem.js');
+ const p={title:'Double a value',description:['Return twice the input.'],signature:'func Double(n int) int',requirements:['Return the result; do not print it.'],examples:[{input:'Double(4)',output:'return 8'},{input:'Double(0)',output:'return 0'}],constraints:['Keep the function signature.']};
+ assert.equal(validateProblem(p),p);
+ p.description[0]='Treat `<script>alert(1)</script>` as text.';
+ const html=renderProblem(p,'guided');assert.match(html,/Function signature/);assert.match(html,/Example 2/);assert.match(html,/Constraints &amp; rules/);assert.match(html,/&lt;script&gt;/);assert.ok(!html.includes('<script>'));
+ p.examples=[];assert.throws(()=>validateProblem(p),/2–3 examples/);
+});
+
+test('existing exercises gain organized statements without changing tasks or exposing answers',async()=>{
+ const {publicLesson}=await import('./library.mjs');const {builtins}=await import('./curriculum.mjs');
+ const original=structuredClone(builtins.functions);const published=publicLesson(original);
+ assert.equal(published.guided.prompt,original.guided.prompt);
+ assert.equal(published.guided.starter,original.guided.starter);
+ assert.equal(published.practice.problem.title,'Calculate the total price');
+ assert.equal(published.practice.problem.examples[0].output,'return 21');
+ assert.equal(published.practice.reference,undefined);assert.equal(published.practice.tests,undefined);
+ assert.equal(original.practice.problem,undefined,'reading does not mutate persisted lessons');
+ const cached=structuredClone(original);cached.origin='Generated & execution-checked';cached.practice.prompt='Implement Total(price int, quantity int) int. Return the product. Do not print. Examples: Total(2, 3) returns 6.';
+ const task=publicLesson(cached).practice.problem;
+ assert.match(task.signature,/func Total/);assert.deepEqual(task.constraints,['Do not print.']);assert.deepEqual(task.examples,[{input:'Total(2, 3)',output:'return 6'}]);
+ assert.equal(task.requirements[0],'Return the product.');
+});

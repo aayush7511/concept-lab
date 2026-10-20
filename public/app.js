@@ -1,3 +1,4 @@
+import {renderProblem} from './problem.js';
 import {renderStructuredLearn} from './learn.js';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const state={csrf:'',projects:[],allProgress:{},project:null,id:null,lesson:null,progress:{drafts:{},hints:{},passes:{}},stage:'learn',model:'',history:[],busy:false,draftTimer:null,load:0};
@@ -82,7 +83,8 @@ function renderStage(){const l=state.lesson,s=state.stage;if(!l)return;
  let html=`<span class="section-label">${titles[s].toUpperCase()}</span><h2>${esc(l.title)}</h2>`;
  if(s==='learn'){html+=renderLearn(l);}
  else if(s==='predict'){html+=`<p>${esc(l.prediction.question)}</p><p>Write the output before running the code. Use a new line wherever the program prints a new line.</p><label class="sr-only" for="prediction">Your predicted output</label><textarea id="prediction" class="prediction-input" rows="5" placeholder="Type the output you expect…"></textarea><button id="check-prediction" class="primary">Check prediction</button><div id="prediction-result" class="prediction-result" hidden></div>`;}
- else{html+=`<p>${esc(l[s].prompt)}</p><p class="why">${s==='guided'?'Use the example to make this small change.':'Work from the requirement. The tests use different inputs to check your understanding.'}</p>`;if(state.progress.revealed?.[s])html+='<p>You viewed the solution. Treat this as a review attempt; try the concept again later without help.</p>';}
+ else{html+=renderProblem(l[s].problem,s);if(state.progress.revealed?.[s])html+='<p class="why">You viewed the solution. This attempt is recorded as review; try again later without help.</p>';}
+
  $('#lesson-content').innerHTML=html;$('#hint-list').replaceChildren();
  if(s==='predict'){$('#prediction').value=currentPredictionAttempted()?state.progress.prediction.value:'';$('#check-prediction').onclick=checkPrediction;}
  $('#sources').innerHTML=`REFERENCE MATERIAL${(l.sources||[]).map(src=>`<a href="${esc(src.url)}" target="_blank" rel="noreferrer">${esc(new URL(src.url).hostname)} ↗</a>`).join('')}<small>${esc(l.origin||'Original lesson')} · examples execution-checked</small>`;

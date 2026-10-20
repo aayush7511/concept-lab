@@ -64,7 +64,7 @@ review rather than independent practice.
 The included **Go APIs & OAuth** project takes a complete Go beginner toward a
 FHIR integration service through **34 concepts mapped to eight tickets**.
 Four original foundation lessons ship with the app; additional lessons are
-generated on request. The source includes **22 automated tests**, and the
+generated on request. The source includes **24 automated tests**, and the
 app has no third-party npm dependencies.
 
 This is a working early prototype, not a claim of validated learning outcomes
@@ -172,8 +172,11 @@ whole course.
   previously cached lessons retain their compatible display.
 - **Predict:** trace a different program before submitting a guess. Run
   becomes available after an attempt.
-- **Modify:** make a guided change, run tests, and reveal hints as needed.
-- **Practice:** solve a different task checked against multiple inputs.
+- **Modify:** solve a focused coding problem with a signature, requirements,
+  examples, and constraints; run tests and request hints as needed.
+- **Practice:** solve an independent problem in the same coding challenge layout,
+  checked against multiple inputs. Existing exercise text is organized without
+  changing its rules; newly generated exercises include explicit input/output examples.
 
 Progress is stored on the server's filesystem in `.local/library.json`, outside
 browser storage. Saves use a synced temporary file, atomic replacement, and a
