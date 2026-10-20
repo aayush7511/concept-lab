@@ -1,0 +1,15 @@
+.local/
+node_modules/
+.env*
+releases/
+.DS_Store
+coverage/
+*.log
+
+# Local verification notes and live-request development helpers
+VERIFICATION.md
+check-connection.mjs
+check-runner.mjs
+prepare-tickets.mjs
+smoke-generate.mjs
+smoke-import.mjs

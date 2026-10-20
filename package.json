@@ -1,0 +1,17 @@
+{
+  "name": "concept-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "doctor": "node scripts/doctor.mjs",
+    "package": "python3 scripts/package-release.py"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "Learn the concepts behind your project, then practice them locally.",
+  "license": "MIT"
+}
