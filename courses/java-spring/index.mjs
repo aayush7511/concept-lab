@@ -1,51 +1,79 @@
 // "Java & Spring Boot for CometCarpool": tickets are real files and roadmap items in
 // ~/Desktop/comet-carpool (src/backend and docs/wiki/known-issues.md).
-import { core } from './lessons-core.mjs';
+import { basics } from './lessons-basics.mjs';
+import { modern } from './lessons-modern.mjs';
 import { spring } from './lessons-spring.mjs';
 
-export const javaVersion = 1;
-const all = [...core, ...spring];
+export const javaVersion = 2;
+const all = [...basics, ...modern, ...spring];
 export const javaLessons = Object.fromEntries(all.map(l => [l.id, l]));
 
-const J = 'https://dev.java/learn/', S = 'https://docs.spring.io/';
-// [id, prerequisites, source, why]
+// One nanoconcept per lesson (concept-lab/CLAUDE.md). [id, prerequisites, why]
 const plan = [
-  ['program', [], J + 'getting-started/', 'Read BackendApplication.main and run any Java file.'],
-  ['types', ['program'], J + 'language-basics/primitive-types/', 'Read User fields such as Long id and String email.'],
-  ['methods', ['types'], J + 'classes-objects/defining-methods/', 'Read UserService methods such as saveUser and loginUser.'],
-  ['conditions', ['methods'], J + 'strings/', 'Follow the UTD-email and duplicate checks in saveUser.'],
-  ['classes', ['methods'], J + 'classes-objects/', 'Understand User, LoginResponse, and new Ride objects.'],
-  ['encapsulation', ['classes'], J + 'classes-objects/more-on-classes/', 'Read the private fields and getters/setters JPA and Jackson rely on.'],
-  ['exceptions', ['conditions'], J + 'exceptions/', 'Follow IllegalArgumentException from UserService to the 400 response.'],
-  ['collections', ['classes'], J + 'api/collections-framework/', 'Read List<User> and JpaRepository<User, Long>.'],
-  ['interfaces', ['classes', 'collections'], J + 'interfaces/', 'Understand UserRepository and PasswordEncoder as swappable contracts.'],
-  ['optional', ['interfaces', 'exceptions'], J + 'api/streams/optionals/', 'Handle missing users safely in login and lookups.'],
-  ['records-enums', ['encapsulation', 'exceptions'], J + 'records/', 'Replace LoginRequest boilerplate and lock roles to an enum.'],
-  ['lambdas', ['interfaces', 'records-enums'], J + 'lambdas/', 'Read csrf -> csrf.disable() and filter rides with streams.'],
-  ['builders', ['lambdas'], J + 'strings/string-builders/', 'Read Jwts.builder() and http.csrf(...).authorizeHttpRequests(...) chains.'],
-  ['time', ['methods', 'optional'], J + 'date-time/', 'Compute token expiry and ride departure cutoffs.'],
-  ['annotations', ['interfaces', 'collections'], J + 'annotations/', 'Know what @Service, @Entity, and @GetMapping actually do.'],
-  ['injection', ['annotations', 'interfaces'], S + 'spring-framework/reference/core/beans/dependencies/factory-collaborators.html', 'Understand why UserController takes UserService in its constructor.'],
-  ['maven-boot', ['injection'], S + 'spring-boot/reference/using/structuring-your-code.html', 'Build and start the backend; read pom.xml and application.properties.'],
-  ['rest', ['records-enums', 'injection'], S + 'spring-framework/reference/web/webmvc/mvc-controller.html', 'Read and add endpoints in UserController.'],
-  ['errors', ['rest', 'exceptions', 'lambdas'], S + 'spring-framework/reference/web/webmvc/mvc-controller/ann-exceptionhandler.html', 'Extend GlobalExceptionHandler with consistent JSON errors.'],
-  ['jpa', ['annotations', 'encapsulation'], S + 'spring-data/jpa/reference/jpa/entity-persistence.html', 'Map User and Ride to Postgres tables safely.'],
-  ['repositories', ['jpa', 'optional', 'lambdas'], S + 'spring-data/jpa/reference/jpa/query-methods.html', 'Write UserRepository and RideRepository query methods.'],
-  ['validation', ['rest', 'records-enums', 'time'], S + 'spring-framework/reference/core/validation/beanvalidation.html', 'Reject bad registration and ride input with 400s (known issue #7).'],
-  ['hashing', ['interfaces', 'lambdas'], S + 'spring-security/reference/features/authentication/password-storage.html', 'Understand BCryptPasswordEncoder.encode and matches.'],
-  ['jwt', ['hashing', 'builders', 'time'], 'https://www.rfc-editor.org/rfc/rfc7519', 'Generate and verify the login token (known issue #1).'],
-  ['security', ['jwt', 'lambdas'], S + 'spring-security/reference/servlet/architecture.html', 'Add the JWT filter and protect endpoints in SecurityConfig.'],
-  ['testing', ['interfaces', 'exceptions', 'injection'], 'https://docs.junit.org/current/user-guide/', 'Write UserService tests with JUnit and Mockito (roadmap #6).'],
+  ['main', [], 'Read BackendApplication.main.'],
+  ['variables', ['main'], 'Read fields and local values.'],
+  ['concat', ['variables'], 'Read messages built with +.'],
+  ['int-division', ['variables'], 'Avoid losing fractions in cost splits.'],
+  ['wrappers', ['variables'], 'Understand why User.id is a Long.'],
+  ['methods', ['concat'], 'Read UserService methods.'],
+  ['classes', ['methods'], 'Understand how User objects are built.'],
+  ['instance-methods', ['classes'], 'Read methods that change an object.'],
+  ['references', ['instance-methods'], 'Know when two names share one object.'],
+  ['getters-setters', ['classes'], 'Read User\'s private fields and accessors.'],
+  ['this', ['getters-setters'], 'Read every setter and constructor in User.'],
+  ['if-else', ['methods'], 'Follow UserService\'s branches.'],
+  ['and-or', ['if-else'], 'Read the null-first email check.'],
+  ['string-equals', ['and-or'], 'Compare roles and emails correctly.'],
+  ['string-cleanup', ['string-equals'], 'Normalize emails (known issue #9).'],
+  ['try-catch', ['if-else'], 'See how errors are handled.'],
+  ['throw', ['try-catch'], 'Follow saveUser\'s IllegalArgumentException.'],
+  ['lists', ['methods'], 'Read List<User> from getAllUsers.'],
+  ['loops', ['lists'], 'Count and total collections.'],
+  ['maps', ['loops'], 'Look values up by key.'],
+  ['interfaces', ['classes'], 'Understand UserRepository and PasswordEncoder.'],
+  ['null-checks', ['if-else'], 'Handle findByEmail returning null.'],
+  ['optional', ['null-checks', 'maps'], 'Use findById\'s Optional.'],
+  ['records', ['classes'], 'Write DTOs like LoginRequest in one line.'],
+  ['enums', ['string-cleanup', 'throw'], 'Lock roles to fixed values (issue #4).'],
+  ['lambdas', ['interfaces'], 'Read csrf -> csrf.disable().'],
+  ['streams', ['lambdas', 'records', 'maps'], 'Search rides (UC-03).'],
+  ['builders', ['instance-methods'], 'Read Jwts.builder() and http chains.'],
+  ['immutable-strings', ['string-cleanup'], 'Keep the result of String methods.'],
+  ['instants', ['methods'], 'Compute token expiry.'],
+  ['local-times', ['instants'], 'Schedule departures and cutoffs.'],
+  ['annotations', ['interfaces', 'lists'], 'Know what @Service and @GetMapping do.'],
+  ['injection', ['annotations'], 'See how UserController gets UserService.'],
+  ['maven', ['injection'], 'Read pom.xml.'],
+  ['component-scan', ['maven'], 'Know where new classes must live.'],
+  ['properties', ['component-scan'], 'Configure the DB without committing secrets.'],
+  ['http-status', ['injection', 'records'], 'Choose response codes.'],
+  ['json', ['http-status'], 'Know the exact JSON the frontend receives.'],
+  ['controllers', ['json'], 'Read and add endpoints.'],
+  ['errors', ['controllers', 'throw', 'lambdas'], 'Extend GlobalExceptionHandler (issue #10).'],
+  ['entities', ['annotations', 'getters-setters'], 'Map User to the users table.'],
+  ['constraints', ['entities'], 'Stop duplicate emails (issue #8).'],
+  ['relationships', ['entities'], 'Link rides to drivers (T7).'],
+  ['repository-save', ['entities', 'optional'], 'Understand save.'],
+  ['derived-queries', ['repository-save', 'string-equals'], 'Write existsByEmail and ride search queries.'],
+  ['validation', ['controllers', 'records', 'local-times'], 'Return 400s for bad input (issue #7).'],
+  ['hashing', ['interfaces'], 'Understand password storage.'],
+  ['salts', ['hashing', 'lambdas'], 'Understand BCrypt encode/matches.'],
+  ['jwt-structure', ['salts', 'builders'], 'Read generateToken.'],
+  ['jwt-verify', ['jwt-structure', 'instants'], 'Verify tokens (issue #1).'],
+  ['bearer', ['jwt-verify'], 'Read the Authorization header.'],
+  ['auth-status', ['bearer', 'optional'], 'Choose 401 vs 403.'],
+  ['filter-chain', ['auth-status'], 'Add the JWT filter to SecurityConfig.'],
+  ['testing', ['interfaces', 'injection', 'throw'], 'Write UserService tests (roadmap #6).'],
 ];
 
 const tickets = [
-  { id: 'T1', title: 'Read the User model and DTOs', file: 'src/backend/src/main/java/com/cometcarpool/backend/model/User.java', conceptIds: ['program', 'types', 'methods', 'classes', 'encapsulation'] },
-  { id: 'T2', title: 'Understand registration and login rules in UserService', file: 'src/backend/src/main/java/com/cometcarpool/backend/service/UserService.java', conceptIds: ['conditions', 'exceptions', 'collections', 'interfaces', 'optional'] },
-  { id: 'T3', title: 'How Spring wires and starts the backend', file: 'src/backend/pom.xml', conceptIds: ['annotations', 'injection', 'maven-boot'] },
-  { id: 'T4', title: 'Users table and UserRepository', file: 'src/backend/src/main/java/com/cometcarpool/backend/repository/UserRepository.java', conceptIds: ['jpa', 'repositories'] },
-  { id: 'T5', title: 'REST endpoints, DTOs, and error handling', file: 'src/backend/src/main/java/com/cometcarpool/backend/controller/UserController.java', conceptIds: ['records-enums', 'rest', 'errors', 'validation'] },
-  { id: 'T6', title: 'Passwords, JWTs, and the security filter chain', file: 'src/backend/src/main/java/com/cometcarpool/backend/config/SecurityConfig.java', conceptIds: ['lambdas', 'builders', 'time', 'hashing', 'jwt', 'security'] },
-  { id: 'T7', title: 'Build ride offers (UC-02): Ride entity, repository, service, controller', file: 'src/backend/src/main/java/com/cometcarpool/backend/model/Ride.java', conceptIds: ['records-enums', 'lambdas', 'time', 'jpa', 'repositories', 'rest', 'validation'] },
+  { id: 'T1', title: 'Read the User model and DTOs', file: 'src/backend/src/main/java/com/cometcarpool/backend/model/User.java', conceptIds: ['main', 'variables', 'concat', 'int-division', 'wrappers', 'methods', 'classes', 'instance-methods', 'references', 'getters-setters', 'this'] },
+  { id: 'T2', title: 'Understand registration and login rules in UserService', file: 'src/backend/src/main/java/com/cometcarpool/backend/service/UserService.java', conceptIds: ['if-else', 'and-or', 'string-equals', 'string-cleanup', 'try-catch', 'throw', 'lists', 'loops', 'maps', 'interfaces', 'null-checks', 'optional'] },
+  { id: 'T3', title: 'How Spring wires and starts the backend', file: 'src/backend/pom.xml', conceptIds: ['annotations', 'injection', 'maven', 'component-scan', 'properties'] },
+  { id: 'T4', title: 'Users table and UserRepository', file: 'src/backend/src/main/java/com/cometcarpool/backend/repository/UserRepository.java', conceptIds: ['entities', 'constraints', 'repository-save', 'derived-queries'] },
+  { id: 'T5', title: 'REST endpoints, DTOs, and error handling', file: 'src/backend/src/main/java/com/cometcarpool/backend/controller/UserController.java', conceptIds: ['records', 'enums', 'http-status', 'json', 'controllers', 'errors', 'validation'] },
+  { id: 'T6', title: 'Passwords, JWTs, and the security filter chain', file: 'src/backend/src/main/java/com/cometcarpool/backend/config/SecurityConfig.java', conceptIds: ['lambdas', 'builders', 'immutable-strings', 'instants', 'hashing', 'salts', 'jwt-structure', 'jwt-verify', 'bearer', 'auth-status', 'filter-chain'] },
+  { id: 'T7', title: 'Build ride offers (UC-02): Ride entity, repository, service, controller', file: 'src/backend/src/main/java/com/cometcarpool/backend/model/Ride.java', conceptIds: ['records', 'enums', 'streams', 'local-times', 'relationships', 'derived-queries', 'controllers', 'validation'] },
   { id: 'T8', title: 'Test UserService with JUnit and Mockito', file: 'src/backend/src/test/java/com/cometcarpool/backend/service/UserServiceTest.java', conceptIds: ['interfaces', 'injection', 'testing'] },
 ];
 
@@ -82,7 +110,7 @@ export const javaCourse = {
   id: 'comet-java', title: 'Java & Spring Boot for CometCarpool', language: 'java', courseVersion: javaVersion,
   description: 'Learn Java and Spring Boot from zero by working through the real CometCarpool backend: models, services, repositories, controllers, security, and tests.',
   learnerProfile: 'New to Java and Spring Boot. Knows some Python, JavaScript, and Go. Wants to fully understand and extend the CometCarpool backend.',
-  concepts: plan.map(([id, prerequisites, url, why]) => ({ id, title: javaLessons[id]?.title || id, prerequisites, sourceUrls: [url], why })),
+  concepts: plan.map(([id, prerequisites, why]) => ({ id, title: javaLessons[id].title, prerequisites, sourceUrls: [javaLessons[id].sources[0].url], why })),
   tickets, spec,
 };
 

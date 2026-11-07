@@ -73,11 +73,11 @@ const ORIGIN = 'Built-in · CometCarpool course';
 
 export function lesson(o) {
   return {
-    id: o.id, title: o.title, language: 'java', minutes: o.minutes || 12, projectFile: o.file,
+    id: o.id, title: o.title, language: 'java', minutes: o.minutes || 6, projectFile: o.file,
     explanation: o.explanation, learn: learn(o),
     example: { code: o.example, notes: o.notes || [] },
     prediction: { code: o.predict.code, question: 'This is a new example of the same idea. What exact output will it print?', expected: o.predict.expected, explanation: o.predict.explanation, version: 1 },
-    guided: exercise(o.guided), practice: exercise(o.practice),
+    guided: o.guided.problem ? structuredClone(o.guided) : exercise(o.guided), practice: o.practice.problem ? structuredClone(o.practice) : exercise(o.practice),
     sources: o.sources, validated: true, origin: ORIGIN,
   };
 }
@@ -89,7 +89,7 @@ export function conceptLesson(o) {
     problem: { title: q.title, description: [q.prompt], signature: 'Answer with one letter: A, B, or C.', requirements: ['Choose the best answer for this CometCarpool scenario.'], examples: [{ input: 'Answer format', output: 'A, B, or C' }, { input: 'Grading', output: 'Your letter is compared with the correct choice; hints explain why.' }], constraints: ['Use one answer letter.'] },
   });
   return {
-    id: o.id, title: o.title, language: 'java', minutes: o.minutes || 8, mode: 'conceptual', projectFile: o.file,
+    id: o.id, title: o.title, language: 'java', minutes: o.minutes || 5, mode: 'conceptual', projectFile: o.file,
     explanation: o.explanation, learn: { format: 'narrative', ...learn(o) },
     example: { code: o.example, notes: [] },
     prediction: { code: o.predict.prompt, question: o.predict.prompt, expected: o.predict.answer, explanation: o.predict.explanation, version: 1 },

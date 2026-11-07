@@ -34,10 +34,10 @@ test('seeding adds the course once and replaces lessons only on version change',
   const data = { projects: [], lessons: {}, progress: {} };
   seedJava(data); seedJava(data);
   assert.equal(data.projects.filter(p => p.id === javaCourse.id).length, 1);
-  assert.equal(data.lessons[`${javaCourse.id}:program`].courseVersion, javaVersion);
-  data.progress[`${javaCourse.id}:program`] = { drafts: { guided: 'mine' }, passes: { guided: true }, hints: {}, revealed: {} };
+  assert.equal(data.lessons[`${javaCourse.id}:main`].courseVersion, javaVersion);
+  data.progress[`${javaCourse.id}:main`] = { drafts: { guided: 'mine' }, passes: { guided: true }, hints: {}, revealed: {} };
   seedJava(data);
-  assert.equal(data.progress[`${javaCourse.id}:program`].drafts.guided, 'mine');
+  assert.equal(data.progress[`${javaCourse.id}:main`].drafts.guided, 'mine');
 });
 
 test('every executable CometCarpool lesson runs: example, prediction, reference passes, starter fails', { skip: !runtimePaths().java && 'No JDK 17+ found', timeout: 600000 }, async () => {
