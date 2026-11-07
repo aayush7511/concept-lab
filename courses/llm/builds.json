@@ -1,0 +1,145 @@
+[
+  {
+    "id": "tokenizer",
+    "title": "Build 1 \u00b7 Reversible tokenizer",
+    "file": "tokenizer.py",
+    "after": "decode",
+    "task": "Implement encode(tokens,vocab) and decode(ids,vocab) using a token-to-integer map. Preserve order and duplicates; empty input returns []. Unknown entries should raise KeyError rather than silently invent IDs. This component becomes the project's text boundary.",
+    "starter": "def encode(tokens, vocab):\n    raise NotImplementedError(\"Implement token lookup\")\n\ndef decode(ids, vocab):\n    raise NotImplementedError(\"Build and use the inverse map\")\n",
+    "reference": "def encode(tokens, vocab):\n    return [vocab[token] for token in tokens]\n\ndef decode(ids, vocab):\n    inverse = {value:key for key,value in vocab.items()}\n    return [inverse[value] for value in ids]\n",
+    "tests": "from main import encode, decode\nvocab = {\"red\":3,\"blue\":8,\".\":1}\nassert encode([\"red\",\"blue\",\"red\"],vocab)==[3,8,3]\nassert decode([8,1,3],vocab)==[\"blue\",\".\",\"red\"]\nassert decode(encode([\"red\",\".\"],vocab),vocab)==[\"red\",\".\"]\nassert encode([],vocab)==[] and decode([],vocab)==[]\ntry: encode([\"missing\"],vocab)\nexcept KeyError: pass\nelse: raise AssertionError(\"Unknown tokens must raise KeyError\")\nprint(\"Tokenizer: order, duplicates, empty input, unknown token, and round trip passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "dataset",
+    "title": "Build 2 \u00b7 Next-token dataset",
+    "file": "dataset.py",
+    "after": "dataloader",
+    "task": "Implement windows(ids,length,stride): return pairs of long tensors. Each input has length entries and each target is shifted by one. Include only complete pairs. Also implement make_loader(ids,length,stride,batch_size), returning an ordered DataLoader that keeps its final partial batch. Positive lengths and strides are required; raise ValueError otherwise.",
+    "starter": "import torch\nfrom torch.utils.data import DataLoader\n\ndef windows(ids, length, stride):\n    raise NotImplementedError(\"Create complete shifted pairs\")\n\ndef make_loader(ids, length, stride, batch_size):\n    raise NotImplementedError(\"Batch the sample pairs without shuffling\")\n",
+    "reference": "import torch\nfrom torch.utils.data import DataLoader\n\ndef windows(ids,length,stride):\n    if length <= 0 or stride <= 0:\n        raise ValueError(\"length and stride must be positive\")\n    return [(torch.tensor(ids[i:i+length],dtype=torch.long),torch.tensor(ids[i+1:i+length+1],dtype=torch.long)) for i in range(0,len(ids)-length,stride)]\n\ndef make_loader(ids,length,stride,batch_size):\n    return DataLoader(windows(ids,length,stride),batch_size=batch_size,shuffle=False,drop_last=False)\n",
+    "tests": "import torch\nfrom main import windows, make_loader\npairs=windows([0,1,2,3,4],2,2)\nassert len(pairs)==2\nassert pairs[1][0].tolist()==[2,3] and pairs[1][1].tolist()==[3,4]\nassert pairs[0][0].dtype==torch.long\nassert windows([1,2],2,1)==[]\nbatches=list(make_loader(list(range(8)),2,1,4))\nassert [x.shape[0] for x,y in batches]==[4,2]\nfor args in [(0,1),(2,0)]:\n    try: windows([1,2],*args)\n    except ValueError: pass\n    else: raise AssertionError(\"Validate length and stride\")\nprint(\"Dataset: shifted targets, boundaries, dtype, stride, and final batch passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "attention",
+    "title": "Build 3 \u00b7 Causal multi-head attention",
+    "file": "attention.py",
+    "after": "merge-heads",
+    "task": "Implement attention(q,k,v) for tensors [batch,heads,time,features]. Return scaled causal attention using a future mask before softmax. Q/K feature widths and sequence lengths match; V may have a different feature width. No dropout in this component. Preserve dtype and device when creating the mask.",
+    "starter": "import torch\n\ndef attention(q, k, v):\n    raise NotImplementedError(\"Scale, mask, normalize, retrieve\")\n",
+    "reference": "import torch\n\ndef attention(q,k,v):\n    scores = (q @ k.transpose(-2,-1)) / (q.shape[-1] ** 0.5)\n    mask = torch.triu(torch.ones(scores.shape[-2:],dtype=torch.bool,device=scores.device),diagonal=1)\n    weights = torch.softmax(scores.masked_fill(mask,float(\"-inf\")),dim=-1)\n    return weights @ v\n",
+    "tests": "import torch\nfrom main import attention\ntorch.manual_seed(42)\nq=torch.zeros(1,1,3,2);k=q.clone();v=torch.tensor([[[[3.],[6.],[9.]]]])\ntorch.testing.assert_close(attention(q,k,v),torch.tensor([[[[3.],[4.5],[6.]]]]))\nq=torch.randn(2,3,4,2,requires_grad=True);k=torch.randn(2,3,4,2,requires_grad=True);v=torch.randn(2,3,4,5,requires_grad=True)\nout=attention(q,k,v);assert out.shape==(2,3,4,5)\nchanged=v.detach().clone();changed[:,:,3,:]+=999\ntorch.testing.assert_close(attention(q,k,changed)[:,:,:3],out[:,:,:3])\nout.sum().backward();assert q.grad is not None and k.grad is not None and v.grad is not None\nsingle=attention(torch.zeros(1,1,1,2),torch.zeros(1,1,1,2),torch.ones(1,1,1,3))\ntorch.testing.assert_close(single,torch.ones(1,1,1,3))\nprint(\"Attention: weighted values, shapes, no future leakage, gradients, and one-token case passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "gpt",
+    "title": "Build 4 \u00b7 Your GPT architecture",
+    "file": "model.py",
+    "after": "generation-step",
+    "task": "Implement Block(width,heads) and GPT(vocab_size,context_length,width=16,heads=2,layers=1). Use learned token/position embeddings, pre-normalized causal attention, a width\u21924*width\u2192width GELU feed-forward network, two residual paths per block, final layer norm, and a vocabulary head. GPT.features(ids) returns [batch,time,width]; GPT(ids) returns [batch,time,vocab]. Reject widths not divisible by heads and contexts longer than the configured limit. Import attention from your passed attention.py build. The scaffold supplies the module/container syntax so the work focuses on wiring previously taught components.",
+    "starter": "import torch\nfrom torch import nn\nfrom attention import attention\n\nclass Block(nn.Module):\n    def __init__(self, width, heads):\n        super().__init__()\n        # Register projections, norms, output projection, and feed-forward layers.\n        raise NotImplementedError(\"Register your block layers\")\n    def forward(self, x):\n        # Split projections into heads, call attention, merge, and add residuals.\n        raise NotImplementedError(\"Connect the block\")\n\nclass GPT(nn.Module):\n    def __init__(self, vocab_size, context_length, width=16, heads=2, layers=1):\n        super().__init__()\n        # nn.Sequential(*[Block(width,heads) for _ in range(layers)]) stacks blocks.\n        # * unpacks the list into positional arguments for Sequential.\n        raise NotImplementedError(\"Register embeddings, blocks, norm, and head\")\n    def features(self, ids):\n        raise NotImplementedError(\"Compute hidden token features\")\n    def forward(self, ids):\n        raise NotImplementedError(\"Map features to vocabulary logits\")\n",
+    "reference": "import torch\nfrom torch import nn\nfrom attention import attention\n\nclass Block(nn.Module):\n    def __init__(self,width,heads):\n        super().__init__()\n        self.heads=heads\n        self.norm1=nn.LayerNorm(width)\n        self.norm2=nn.LayerNorm(width)\n        self.q=nn.Linear(width,width)\n        self.k=nn.Linear(width,width)\n        self.v=nn.Linear(width,width)\n        self.out=nn.Linear(width,width)\n        self.ff=nn.Sequential(nn.Linear(width,4*width),nn.GELU(approximate=\"tanh\"),nn.Linear(4*width,width))\n    def forward(self,x):\n        b,t,d=x.shape\n        z=self.norm1(x)\n        q=self.q(z).reshape(b,t,self.heads,d//self.heads).transpose(1,2)\n        k=self.k(z).reshape(b,t,self.heads,d//self.heads).transpose(1,2)\n        v=self.v(z).reshape(b,t,self.heads,d//self.heads).transpose(1,2)\n        update=attention(q,k,v).transpose(1,2).reshape(b,t,d)\n        x=x+self.out(update)\n        return x+self.ff(self.norm2(x))\n\nclass GPT(nn.Module):\n    def __init__(self,vocab_size,context_length,width=16,heads=2,layers=1):\n        super().__init__()\n        if width % heads or context_length < 1:\n            raise ValueError(\"Invalid model dimensions\")\n        self.context_length=context_length\n        self.token=nn.Embedding(vocab_size,width)\n        self.position=nn.Embedding(context_length,width)\n        self.blocks=nn.Sequential(*[Block(width,heads) for _ in range(layers)])\n        self.norm=nn.LayerNorm(width)\n        self.head=nn.Linear(width,vocab_size,bias=False)\n    def features(self,ids):\n        if ids.shape[1] > self.context_length:\n            raise ValueError(\"Context limit exceeded\")\n        positions=torch.arange(ids.shape[1],device=ids.device)\n        return self.norm(self.blocks(self.token(ids)+self.position(positions)))\n    def forward(self,ids):\n        return self.head(self.features(ids))\n",
+    "tests": "import torch\nfrom main import GPT\ntorch.manual_seed(42)\nmodel=GPT(11,8,width=12,heads=3,layers=2).eval()\nids=torch.tensor([[1,2,3,4],[4,3,2,1]])\nout=model(ids);assert out.shape==(2,4,11)\nassert model.features(ids).shape==(2,4,12)\nchanged=ids.clone();changed[:,3]=8\ntorch.testing.assert_close(model(changed)[:,:3],out[:,:3])\nout.sum().backward();assert all(p.grad is not None for p in model.parameters())\nassert model(torch.tensor([[2]])).shape==(1,1,11)\ntry: model(torch.ones(1,9,dtype=torch.long))\nexcept ValueError: pass\nelse: raise AssertionError(\"Reject context overflow\")\ntry: GPT(11,8,width=7,heads=2)\nexcept ValueError: pass\nelse: raise AssertionError(\"Reject indivisible head width\")\nprint(\"GPT: batched shapes, hidden features, causality, gradients, context and head validation passed.\")\n",
+    "requires": [
+      "attention"
+    ],
+    "minutes": 30
+  },
+  {
+    "id": "trainer",
+    "title": "Build 5 \u00b7 Train and resume",
+    "file": "trainer.py",
+    "after": "save-load",
+    "task": "Implement train_steps(model,inputs,targets,steps,rate): use AdamW, flatten batch/time for cross-entropy, clear gradients, backward, and step; return a list of loss floats. Implement snapshot(model,optimizer,step) returning a dictionary with cloned model state, optimizer state, and step. Implement restore(model,optimizer,state) to load both states and return step. This lab uses a tiny repeated batch to verify the mechanism, not language quality.",
+    "starter": "import copy\nimport torch\nimport torch.nn.functional as F\n\ndef train_steps(model, inputs, targets, steps, rate):\n    raise NotImplementedError(\"Train on shifted targets\")\n\ndef snapshot(model, optimizer, step):\n    # copy.deepcopy creates independent nested state; .state_dict() alone may alias weights.\n    raise NotImplementedError(\"Capture model, optimizer, and step\")\n\ndef restore(model, optimizer, state):\n    raise NotImplementedError(\"Restore both states and return step\")\n",
+    "reference": "import copy\nimport torch\nimport torch.nn.functional as F\n\ndef train_steps(model,inputs,targets,steps,rate):\n    model.train()\n    optimizer=torch.optim.AdamW(model.parameters(),lr=rate)\n    losses=[]\n    for _ in range(steps):\n        optimizer.zero_grad(set_to_none=True)\n        logits=model(inputs)\n        loss=F.cross_entropy(logits.reshape(-1,logits.shape[-1]),targets.reshape(-1))\n        loss.backward()\n        optimizer.step()\n        losses.append(loss.item())\n    return losses\n\ndef snapshot(model,optimizer,step):\n    return copy.deepcopy({\"model\":model.state_dict(),\"optimizer\":optimizer.state_dict(),\"step\":step})\n\ndef restore(model,optimizer,state):\n    model.load_state_dict(state[\"model\"])\n    optimizer.load_state_dict(state[\"optimizer\"])\n    return state[\"step\"]\n",
+    "tests": "import torch\nfrom model import GPT\nfrom main import train_steps,snapshot,restore\ntorch.manual_seed(9);torch.set_num_threads(1)\nm=GPT(7,4,width=8,heads=2)\nx=torch.tensor([[0,1,2,3]]);y=torch.tensor([[1,2,3,4]])\nlosses=train_steps(m,x,y,30,0.03)\nassert len(losses)==30 and losses[-1] < losses[0]*0.4, \"Tiny batch should overfit\"\nassert train_steps(m,x,y,0,0.01)==[]\nopt=torch.optim.AdamW(m.parameters(),lr=0.02)\nopt.zero_grad();m(x).sum().backward();opt.step()\nstate=snapshot(m,opt,13);before={k:v.clone() for k,v in m.state_dict().items()}\nwith torch.no_grad(): next(m.parameters()).add_(10)\nassert all(torch.equal(state[\"model\"][k],v) for k,v in before.items()), \"Snapshot must not alias model\"\nother=GPT(7,4,width=8,heads=2);other_opt=torch.optim.AdamW(other.parameters(),lr=0.5)\nassert restore(other,other_opt,state)==13\nm.load_state_dict(before);m.eval();other.eval();torch.testing.assert_close(m(x),other(x))\nassert other_opt.param_groups[0][\"lr\"]==0.02 and len(other_opt.state)>0\nprint(\"Training: loss reduction, zero steps, independent snapshots, logits and optimizer-state restoration passed.\")\n",
+    "requires": [
+      "attention",
+      "gpt"
+    ],
+    "minutes": 30
+  },
+  {
+    "id": "sampler",
+    "title": "Build 6 \u00b7 Generate with controls",
+    "file": "generation.py",
+    "after": "stop-eot",
+    "task": "Implement generate(model,ids,count,context,temperature=0.,top_k=None,eot=None). Return prompt plus generated IDs. Use greedy argmax when temperature is zero; otherwise optionally filter to top_k and sample from softmax(logits/temperature). Crop only the model input. For this single-example build stop when the generated ID equals eot, keeping that stop token. Restore the model's original training mode afterward. Run without gradient recording.",
+    "starter": "import torch\n\ndef generate(model, ids, count, context, temperature=0., top_k=None, eot=None):\n    raise NotImplementedError(\"Crop, call, choose, append, repeat\")\n",
+    "reference": "import torch\n\ndef generate(model,ids,count,context,temperature=0.,top_k=None,eot=None):\n    if context < 1 or temperature < 0 or ids.shape[0] != 1:\n        raise ValueError(\"Use one sequence, positive context, and nonnegative temperature\")\n    old=model.training\n    model.eval()\n    try:\n        with torch.no_grad():\n            for _ in range(count):\n                scores=model(ids[:,-context:])[:,-1,:]\n                if temperature==0:\n                    nxt=scores.argmax(dim=-1,keepdim=True)\n                else:\n                    if top_k is not None:\n                        cutoff=torch.topk(scores,top_k,dim=-1).values[...,-1:]\n                        scores=scores.masked_fill(scores<cutoff,float(\"-inf\"))\n                    nxt=torch.multinomial(torch.softmax(scores/temperature,dim=-1),1)\n                ids=torch.cat([ids,nxt],dim=1)\n                if eot is not None and nxt.item()==eot:\n                    break\n        return ids\n    finally:\n        model.train(old)\n",
+    "tests": "import torch\nfrom torch import nn\nfrom main import generate\nclass Fixed(nn.Module):\n    def forward(self,x):\n        assert x.shape[1]<=2, \"Crop model context\"\n        assert not torch.is_grad_enabled(), \"Generation should disable gradients\"\n        return torch.tensor([0.,1.,4.]).expand(x.shape[0],x.shape[1],3)\nm=Fixed().train();ids=torch.tensor([[0,1,0]])\nassert generate(m,ids,3,2).tolist()==[[0,1,0,2,2,2]]\nassert m.training, \"Restore original model mode\"\nassert generate(m,ids,5,2,eot=2).tolist()==[[0,1,0,2]]\nassert generate(m,ids,2,2,temperature=1.,top_k=1).tolist()==[[0,1,0,2,2]]\nassert generate(m,ids,0,2).tolist()==ids.tolist()\nprint(\"Generation: context crop, greedy, sampling, stop, zero count, no_grad, and mode restoration passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "classifier",
+    "title": "Build 7 \u00b7 A classification head",
+    "file": "classifier.py",
+    "after": "confusion",
+    "task": "Implement Classifier(base,width,classes=2): freeze all base parameters, add a trainable nn.Linear head, and classify the final-position features from base.features(ids). forward returns [batch,classes] logits. Set base to eval mode during forward so a frozen model's dropout is disabled. Implement accuracy(logits,labels) as a Python float for a nonempty batch.",
+    "starter": "import torch\nfrom torch import nn\n\nclass Classifier(nn.Module):\n    def __init__(self, base, width, classes=2):\n        super().__init__()\n        raise NotImplementedError(\"Freeze base and add head\")\n    def forward(self, ids):\n        raise NotImplementedError(\"Select features and classify\")\n\ndef accuracy(logits, labels):\n    raise NotImplementedError(\"Count correct predictions\")\n",
+    "reference": "import torch\nfrom torch import nn\n\nclass Classifier(nn.Module):\n    def __init__(self,base,width,classes=2):\n        super().__init__()\n        self.base=base\n        for p in base.parameters(): p.requires_grad_(False)\n        self.head=nn.Linear(width,classes)\n    def forward(self,ids):\n        self.base.eval()\n        return self.head(self.base.features(ids)[:,-1,:])\n\ndef accuracy(logits,labels):\n    return (logits.argmax(dim=-1)==labels).float().mean().item()\n",
+    "tests": "import torch\nfrom model import GPT\nfrom main import Classifier,accuracy\nbase=GPT(9,4,width=8,heads=2);m=Classifier(base,8)\nx=torch.tensor([[1,2],[2,3]])\nassert m(x).shape==(2,2)\nassert not any(p.requires_grad for p in base.parameters())\nassert all(p.requires_grad for p in m.head.parameters())\nassert accuracy(torch.tensor([[3.,1.],[3.,1.]]),torch.tensor([0,1]))==0.5\nassert accuracy(torch.tensor([[0.,1.]]),torch.tensor([1]))==1.\nopt=torch.optim.AdamW(m.parameters(),lr=0.03);before={k:v.clone() for k,v in base.state_dict().items()}\nopt.zero_grad();m(x).sum().backward();opt.step()\nassert all(torch.equal(v,base.state_dict()[k]) for k,v in before.items())\nprint(\"Classifier: logits, trainable head, frozen base, accuracy and update isolation passed.\")\n",
+    "requires": [
+      "attention",
+      "gpt"
+    ],
+    "minutes": 30
+  },
+  {
+    "id": "instructions",
+    "title": "Build 8 \u00b7 Instruction batches",
+    "file": "instructions.py",
+    "after": "ignore-loss",
+    "task": "Implement collate(rows,pad_id): each nonempty row contains prompt+response IDs. Append one end token (pad_id), then create one-token-shifted inputs and targets. Pad to the longest original row length. Keep the first real termination target supervised; only later padding targets become -100. Return two long tensors [batch,max_original_length]. Reject empty batches and empty rows. This component plugs into your trainer and should use cross-entropy's ignore_index=-100.",
+    "starter": "import torch\n\ndef collate(rows, pad_id):\n    raise NotImplementedError(\"Shift, pad, and preserve the real end target\")\n",
+    "reference": "import torch\n\ndef collate(rows,pad_id):\n    if not rows or any(not row for row in rows):\n        raise ValueError(\"Rows must be nonempty\")\n    width=max(len(row) for row in rows)\n    inputs=[];targets=[]\n    for row in rows:\n        seq=list(row)+[pad_id]\n        inputs.append(seq[:-1]+[pad_id]*(width-len(row)))\n        targets.append(seq[1:]+[-100]*(width-len(row)))\n    return torch.tensor(inputs,dtype=torch.long),torch.tensor(targets,dtype=torch.long)\n",
+    "tests": "import torch\nfrom main import collate\nx,y=collate([[1,2,3],[4]],9)\nassert x.tolist()==[[1,2,3],[4,9,9]]\nassert y.tolist()==[[2,3,9],[9,-100,-100]], \"Retain one real end target\"\nx,y=collate([[2,9],[5,6]],9);assert y.tolist()==[[9,9],[6,9]], \"A content ID equal to pad is not automatically invalid\"\nassert x.dtype==torch.long and y.dtype==torch.long\nfor rows in [[],[[]]]:\n    try:collate(rows,9)\n    except ValueError:pass\n    else:raise AssertionError(\"Reject empty rows\")\nprint(\"Instruction collator: shifted targets, batch padding, real end targets, dtype and empty-input validation passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "lora",
+    "title": "Build 9 \u00b7 A low-rank adapter",
+    "file": "lora.py",
+    "after": "adapter-count",
+    "task": "Implement LoRALinear(base,rank,scale=1.): freeze an nn.Linear base; register A shaped [in_features,rank] and B shaped [rank,out_features]. Initialize A with small random values and B with zeros so initial output equals base output. forward computes base(x)+scale*(x@A@B). Rank must be positive. Keep the scale convention explicit.",
+    "starter": "import torch\nfrom torch import nn\n\nclass LoRALinear(nn.Module):\n    def __init__(self, base, rank, scale=1.):\n        super().__init__()\n        raise NotImplementedError(\"Freeze base; register low-rank factors\")\n    def forward(self, x):\n        raise NotImplementedError(\"Add the scaled low-rank path\")\n",
+    "reference": "import torch\nfrom torch import nn\n\nclass LoRALinear(nn.Module):\n    def __init__(self,base,rank,scale=1.):\n        super().__init__()\n        if rank < 1: raise ValueError(\"rank must be positive\")\n        self.base=base\n        self.scale=scale\n        for p in base.parameters(): p.requires_grad_(False)\n        self.A=nn.Parameter(torch.randn(base.in_features,rank)*0.01)\n        self.B=nn.Parameter(torch.zeros(rank,base.out_features))\n    def forward(self,x):\n        return self.base(x)+self.scale*(x @ self.A @ self.B)\n",
+    "tests": "import torch\nfrom torch import nn\nfrom main import LoRALinear\ntorch.manual_seed(4);base=nn.Linear(4,3);adapter=LoRALinear(base,2,scale=0.5);x=torch.randn(2,4)\ntorch.testing.assert_close(adapter(x),base(x))\nassert sum(p.numel() for p in adapter.parameters() if p.requires_grad)==14\nassert not any(p.requires_grad for p in base.parameters())\nwith torch.no_grad():adapter.A.fill_(1.);adapter.B.fill_(2.)\ntorch.testing.assert_close(adapter(x),base(x)+0.5*(x@adapter.A@adapter.B))\nadapter(x).sum().backward();assert adapter.A.grad is not None and adapter.B.grad is not None\nassert all(p.grad is None for p in base.parameters())\ntry:LoRALinear(nn.Linear(2,2),0)\nexcept ValueError:pass\nelse:raise AssertionError(\"Reject zero rank\")\nprint(\"LoRA: unchanged initial model, adapter count, scale, gradients and frozen base passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  },
+  {
+    "id": "pretrained",
+    "title": "Build 10 \u00b7 Map pretrained GPT-2 weights",
+    "file": "pretrained.py",
+    "after": "weight-map",
+    "task": "Implement load_weights(model,weights) for a GPT matching the checkpoint dimensions. The dictionary uses GPT-2 names: wte.weight, wpe.weight, ln_f.weight/bias; h.i.ln_1 and ln_2 weight/bias; h.i.attn.c_attn.weight/bias (Q/K/V concatenated); h.i.attn.c_proj.weight/bias; h.i.mlp.c_fc.weight/bias and c_proj.weight/bias. The c_attn and c_proj/c_fc matrices use [input,output] orientation. Split Q/K/V along output, transpose each, and load every parameter including the vocabulary head from wte.weight. Reject missing names and incompatible shapes. Use torch.no_grad during copies. This lab tests synthetic checkpoints; the exported helper can load real public GPT-2 weights of matching dimensions.",
+    "starter": "import torch\n\ndef load_weights(model, weights):\n    # model.state_dict() supplies named destination tensors; copy_ updates their storage.\n    # torch.chunk(tensor,3,dim=1) splits a combined Q/K/V output projection.\n    raise NotImplementedError(\"Map each source name and verify shape before copying\")\n",
+    "reference": "import torch\n\ndef load_weights(model,weights):\n    state=model.state_dict()\n    mapping={\"token.weight\":weights[\"wte.weight\"],\"position.weight\":weights[\"wpe.weight\"],\"norm.weight\":weights[\"ln_f.weight\"],\"norm.bias\":weights[\"ln_f.bias\"],\"head.weight\":weights[\"wte.weight\"]}\n    for i,block in enumerate(model.blocks):\n        prefix=f\"h.{i}.\";target=f\"blocks.{i}.\"\n        for src,dst in [(\"ln_1\",\"norm1\"),(\"ln_2\",\"norm2\")]:\n            for part in [\"weight\",\"bias\"]: mapping[target+dst+\".\"+part]=weights[prefix+src+\".\"+part]\n        qs,ks,vs=torch.chunk(weights[prefix+\"attn.c_attn.weight\"],3,dim=1)\n        qb,kb,vb=torch.chunk(weights[prefix+\"attn.c_attn.bias\"],3,dim=0)\n        for name,w,b in [(\"q\",qs,qb),(\"k\",ks,kb),(\"v\",vs,vb)]:\n            mapping[target+name+\".weight\"]=w.T\n            mapping[target+name+\".bias\"]=b\n        for src,dst in [(\"attn.c_proj\",\"out\"),(\"mlp.c_fc\",\"ff.0\"),(\"mlp.c_proj\",\"ff.2\")]:\n            mapping[target+dst+\".weight\"]=weights[prefix+src+\".weight\"].T\n            mapping[target+dst+\".bias\"]=weights[prefix+src+\".bias\"]\n    if mapping.keys()!=state.keys(): raise ValueError(\"Incomplete parameter mapping\")\n    for name,value in mapping.items():\n        if value.shape != state[name].shape: raise ValueError(\"Shape mismatch: \"+name)\n    with torch.no_grad():\n        for name,value in mapping.items(): state[name].copy_(value)\n    return model\n",
+    "tests": "import torch\nfrom model import GPT\nfrom main import load_weights\ntorch.manual_seed(12);source=GPT(13,6,width=8,heads=2,layers=2);target=GPT(13,6,width=8,heads=2,layers=2)\ns=source.state_dict();weights={\"wte.weight\":s[\"token.weight\"],\"wpe.weight\":s[\"position.weight\"],\"ln_f.weight\":s[\"norm.weight\"],\"ln_f.bias\":s[\"norm.bias\"]}\nfor i in range(2):\n    p=f\"h.{i}.\";t=f\"blocks.{i}.\"\n    for a,b in [(\"ln_1\",\"norm1\"),(\"ln_2\",\"norm2\")]:\n        for part in [\"weight\",\"bias\"]: weights[p+a+\".\"+part]=s[t+b+\".\"+part]\n    weights[p+\"attn.c_attn.weight\"]=torch.cat([s[t+n+\".weight\"].T for n in [\"q\",\"k\",\"v\"]],dim=1)\n    weights[p+\"attn.c_attn.bias\"]=torch.cat([s[t+n+\".bias\"] for n in [\"q\",\"k\",\"v\"]])\n    for a,b in [(\"attn.c_proj\",\"out\"),(\"mlp.c_fc\",\"ff.0\"),(\"mlp.c_proj\",\"ff.2\")]:\n        weights[p+a+\".weight\"]=s[t+b+\".weight\"].T;weights[p+a+\".bias\"]=s[t+b+\".bias\"]\nload_weights(target,weights)\nexpected=dict(s);expected[\"head.weight\"]=s[\"token.weight\"]\nfor name,value in target.state_dict().items():torch.testing.assert_close(value,expected[name])\ntry:load_weights(target,{})\nexcept (KeyError,ValueError):pass\nelse:raise AssertionError(\"Reject missing weights\")\nbad=dict(weights);bad[\"wte.weight\"]=torch.zeros(2,2)\ntry:load_weights(target,bad)\nexcept ValueError:pass\nelse:raise AssertionError(\"Reject shape mismatch\")\nprint(\"Pretrained mapping: every parameter, Q/K/V splits, transpose, vocabulary head, missing and mismatched weights passed.\")\n",
+    "requires": [
+      "attention",
+      "gpt"
+    ],
+    "minutes": 30
+  },
+  {
+    "id": "schedule",
+    "title": "Build 11 \u00b7 Warmup and cosine schedule",
+    "file": "schedule.py",
+    "after": "clip",
+    "task": "Implement learning_rate(step,total,warmup,peak,minimum). For 0 <= step < warmup use peak*step/warmup; thereafter cosine-decay from peak at warmup to minimum at total. Clamp steps beyond total to minimum. Require total>warmup>=0 and step>=0. Also implement clip_gradients(model,max_norm) by calling torch.nn.utils.clip_grad_norm_ after gradients exist. Return the original total norm as a Python float.",
+    "starter": "import math\nimport torch\n\ndef learning_rate(step,total,warmup,peak,minimum):\n    raise NotImplementedError(\"Join warmup and cosine decay\")\n\ndef clip_gradients(model,max_norm):\n    raise NotImplementedError(\"Clip existing parameter gradients\")\n",
+    "reference": "import math\nimport torch\n\ndef learning_rate(step,total,warmup,peak,minimum):\n    if not total>warmup>=0 or step<0: raise ValueError(\"Invalid schedule boundaries\")\n    if step<warmup:return peak*step/warmup\n    progress=min((step-warmup)/(total-warmup),1.)\n    return minimum+(peak-minimum)*0.5*(1+math.cos(math.pi*progress))\n\ndef clip_gradients(model,max_norm):\n    return torch.nn.utils.clip_grad_norm_(model.parameters(),max_norm).item()\n",
+    "tests": "import math\nimport torch\nfrom main import learning_rate,clip_gradients\nassert learning_rate(0,10,2,0.1,0.01)==0.\nassert math.isclose(learning_rate(1,10,2,0.1,0.01),0.05)\nassert math.isclose(learning_rate(2,10,2,0.1,0.01),0.1)\nassert math.isclose(learning_rate(6,10,2,0.1,0.01),0.055)\nassert math.isclose(learning_rate(10,10,2,0.1,0.01),0.01)\nassert math.isclose(learning_rate(20,10,2,0.1,0.01),0.01)\nassert math.isclose(learning_rate(0,10,0,0.1,0.01),0.1)\nm=torch.nn.Linear(2,1,bias=False);m.weight.grad=torch.tensor([[3.,4.]])\nassert math.isclose(clip_gradients(m,1.),5.)\nassert m.weight.grad.norm().item()<=1.00001\nprint(\"Schedule: warmup, boundary, midpoint, end clamp, zero warmup, and gradient-norm clipping passed.\")\n",
+    "requires": [],
+    "minutes": 30
+  }
+]

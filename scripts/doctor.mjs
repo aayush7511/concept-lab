@@ -4,6 +4,7 @@ const paths=runtimePaths();let errors=0;
 console.log('Concept Lab setup check\n');
 if(process.platform!=='darwin'){console.log('This beta supports macOS only. Linux and Windows runners are not implemented.');errors++;}
 if(Number(process.versions.node.split('.')[0])<20){console.log('Node.js 20+ is required.');errors++;}
+if(paths.java)console.log(`Java (optional, for Java courses): ${paths.java.home}`);else console.log('Java (optional): no JDK 17+ found. Java lessons need one; set CONCEPT_LAB_JAVA_HOME to a JDK home if it is installed elsewhere.');
 for(const [name,exe,args] of [['Node.js',paths.node,['--version']],['Go',paths.go,['version']],['Python',paths.python,['--version']]]){
  if(!exe){console.log(`${name}: missing. Install it from its official website or package manager, then reopen your terminal.`);errors++;continue;}
  const r=spawnSync(exe,args,{encoding:'utf8',timeout:10000});if(r.status!==0){console.log(`${name}: executable found but did not run. Set a working path using CONCEPT_LAB_GO or CONCEPT_LAB_PYTHON.`);errors++;continue;}

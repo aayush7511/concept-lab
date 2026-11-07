@@ -193,7 +193,7 @@ credentials and must never be committed or shared.
 
 Progress tracks drafts, predictions, passed exercises, hints, and revealed
 solutions. A solution reveal counts as review rather than independent
-practice. Tutor chat history currently resets on reload.
+practice. The latest ten tutor messages are saved per lesson after a completed response and restored on reload. An interrupted response may not be saved.
 
 **Import tickets** accepts Go, Python, or JavaScript project specifications,
 with specifications up to 1,000,000 characters, up to 30 tickets, and 70 concepts.
@@ -260,3 +260,64 @@ Maintainers can create a clean source ZIP with `npm run package`. The packager
 uses an explicit file allowlist and excludes personal data, local overrides,
 and live-request development scripts. This repository contains no account
 credentials and no pre-authorized connection for another user.
+
+## LLMs From Scratch course
+
+Select **LLMs From Scratch** in the project picker, or open
+`http://127.0.0.1:4318/?course=llm`.
+
+The supplied course has **122 original nanotopics across 22 modules** (113 executable lessons and nine conceptual checkpoints)
+and **11 cumulative component builds**. It assumes Python knowledge and teaches
+PyTorch, tensor shapes, tokenizer usage, NumPy conversion, and plotting as they
+are needed. Executable lessons include Learn, a separate Predict program,
+a guided repair, and an independently specified transfer problem. The course
+requires no AI requests to open lessons or grade them; the existing tutor is
+optional and uses the learner's connected account.
+
+Every Learn lesson has individually authored background, a concrete goal, the
+reason for the design choice, and a worked explanation. PyTorch and companion
+library syntax is explained where it is used. These notes live in
+`courses/llm/learn_content.py`; rebuilding the course fails if any topic is missing
+its teaching notes. Content updates preserve existing exercise drafts and progress.
+
+Provision the isolated Python environment and GPT-2 tokenizer cache once:
+
+```sh
+npm run setup:llm
+npm start
+```
+
+This downloads pinned Python dependencies and tokenizer data. It does not
+purchase the book or download full pretrained model weights. Lesson execution
+uses CPU and the existing network-free macOS sandbox. PyTorch runs have a
+two-minute bound. Build runs are cancellable and keep saved drafts; an active
+run ends if the server restarts.
+
+The Build workspace keeps passed tokenizer, dataset, attention, GPT, trainer,
+generation, classifier, instruction-collator, LoRA, weight-mapping, and schedule
+modules. Later builds import your passed prerequisites. Passing practice makes
+it eligible for reconstruction tomorrow. Hints and reference reveals are
+recorded separately from independent completion.
+
+This is an original course aligned to the book's core path, not a reproduction
+of the textbook or a claim that every original book exercise has been ported.
+The supplied MEAP and incomplete published PDFs are kept outside the app and
+excluded from releases. Full-pretrained-model quality and GPU performance are
+not validated by the small CPU component checks.
+
+To run the course's executable content audit:
+
+```sh
+npm run verify:llm
+```
+
+It checks every example and prediction, both reference answers, failing starters,
+all cumulative builds, and network isolation. Conceptual checkpoints use scenario questions rather than executing answer text. To rebuild lesson fixtures after
+editing the authored course definitions, use the course virtual environment:
+
+```sh
+TIKTOKEN_CACHE_DIR="$PWD/.local/llm-assets" .local/llm-venv/bin/python courses/llm/author.py
+python3 courses/llm/builds.py
+```
+
+Exercise separation audit: run `npm run audit:llm`. The task-by-task report is in `courses/llm/EXERCISE-AUDIT.md`. Practice tasks have their own requirements and fixtures rather than a generic list wrapper around Modify. Predict uses a separate worked input from Modify examples.
