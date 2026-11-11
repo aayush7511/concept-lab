@@ -28,3 +28,50 @@
 
 /* Coding challenge statements shared by Modify and Practice. */
 .problem-meta{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 14px}.problem-meta span{font-size:8px;font-weight:650;letter-spacing:.8px;padding:4px 7px;border-radius:4px;background:#e1e8dd;color:#4b6246}.narrative .problem-title{font-size:18px;line-height:1.4;margin:12px 0 16px}.narrative .problem-description{line-height:1.7;margin-bottom:14px}.narrative .problem-section h3,.narrative .problem-example h3{font-size:12px;font-weight:700;color:#273c31;margin:22px 0 10px}.problem-points{padding-left:18px;margin:0}.problem-points li{padding-left:2px;margin-bottom:10px;line-height:1.7}.narrative .problem-signature{white-space:pre-wrap;overflow-wrap:anywhere;background:#e5e9e0;border:1px solid #d4ddce;border-radius:6px;padding:12px;font:11px/1.7 ui-monospace,monospace}.problem-signature code{background:transparent;padding:0}.problem-example{border-left:3px solid #9bb48d;padding:1px 13px 8px;margin:22px 0;background:#ecefe7;border-radius:0 5px 5px 0}.narrative .problem-example h3{margin-top:10px}.problem-example dl{margin:0}.problem-example dt{font-size:10px;font-weight:700;color:#576957;margin-top:9px}.problem-example dd{margin:0}.problem-example pre{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.7 ui-monospace,monospace;margin:3px 0 9px;color:#28382f}.narrative .problem-example p{font-size:11px;line-height:1.7;margin:10px 0}.problem-help{border-top:1px solid #d5ddce;margin:24px 0 0;padding-top:16px;font-size:11px;color:#61705a}.problem-help b{color:#475e42}.narrative .problem-help p{font-size:11px;line-height:1.65;margin:7px 0}
+.course-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 22px;margin-bottom:24px;border:1px solid #cad8c4;background:#e8efdf;border-radius:10px}.course-banner[hidden]{display:none}.course-banner p{margin:5px 0 7px;font-size:18px;font-weight:600;color:#263e2c}.course-banner small{font-size:11px;color:#5b7058}.course-controls{display:flex;flex-direction:column;align-items:stretch;gap:8px}.build-dialog{width:min(1100px,95vw);max-width:1100px}.build-intro{font-size:13px;line-height:1.7;color:#5c685e}.build-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:22px 0}.build-card{display:grid;grid-template-columns:20px 1fr;text-align:left;gap:7px;padding:14px;background:#f0f3e9;border:1px solid #d5deca;border-radius:7px;color:#30462f;cursor:pointer}.build-card small{grid-column:2;font-size:10px;font-weight:400}.build-card strong{font-size:12px}.build-card.passed{border-color:#6d985b;background:#e4edda}.build-code{box-sizing:border-box;width:100%;min-height:330px;padding:18px;border-radius:8px;border:1px solid #344553;background:#18242f;color:#deead8;font:12px/1.8 ui-monospace,SFMono-Regular,monospace;tab-size:4;resize:vertical;white-space:pre;overflow:auto}.build-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}#build-task{font-size:13px;line-height:1.8;white-space:pre-wrap}#build-output{padding:18px;background:#e9eee3;color:#263d2b;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:7px;font:12px/1.7 ui-monospace,monospace;max-height:300px;overflow:auto}.review-item{display:flex;width:100%;gap:15px;padding:14px;border:0;border-bottom:1px solid #d5deca;text-align:left;background:transparent;cursor:pointer}.review-item span{font-size:10px;color:#5d7f4d;min-width:40px}@media(max-width:800px){.course-banner{flex-direction:column;align-items:stretch}.build-list{grid-template-columns:1fr 1fr}}@media(max-width:500px){.build-list{grid-template-columns:1fr}}
+.build-dialog .build-intro{color:#aebca9}.build-dialog #build-task{color:#dce5d5}.build-dialog #build-file{display:block;margin:16px 0 8px;color:#c6d7b7;font-size:12px}.build-dialog .fine{color:#a6b89c}.build-dialog #build-output{color:#263d2b}
+.attention-lab{margin:24px 0;padding:18px;background:#e6efeb;border:1px solid #bfd1c5;border-radius:8px;color:#284d3b}.narrative .attention-lab p{font-size:12px;line-height:1.7}.attention-lab label{display:block;font-size:11px;color:#365a46}.attention-lab input[type=range]{width:100%;accent-color:#537d51;margin:12px 0}.attention-lab output{float:right;font-weight:700}.attention-values{display:flex;gap:10px;margin:15px 0}.attention-values>div{flex:1;text-align:center;background:#f9fbf5;border:1px solid #ccdac9;border-radius:6px;padding:10px}.attention-values b,.attention-values span,.attention-values small{display:block;font-size:11px;margin-bottom:5px}.attention-meter{height:8px;border-radius:4px;background:linear-gradient(to right,#62935d calc(var(--weight)*100%),#e3e9df 0)}.attention-lab>small{font-size:10px;line-height:1.7;color:#59745f}.attention-lab .lab-toggle{font-size:11px;line-height:1.7}.attention-lab #lab-context{font-weight:650}
+.lesson-shell.conceptual-read{grid-template-columns:minmax(0,1.65fr) minmax(250px,1fr)}.conceptual-read .editor-pane{display:none}.conceptual-read .narrative{padding:28px 32px}.conceptual-read .result-pane{grid-column:auto}.course-banner #review-open{color:#4b6940}.attention-values meter{width:100%;accent-color:#62935d}@media(max-width:800px){.lesson-shell.conceptual-read{grid-template-columns:1fr}.conceptual-read .result-pane{grid-column:1/-1}}
+
+/* Keep the conversation inside the result column; let messages scroll independently. */
+.result-pane{min-height:0;overflow:hidden}
+#tutor-panel{overflow:hidden}
+#tutor-panel .tutor-intro,#tutor-form{flex-shrink:0}
+#chat{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:#52667d transparent;padding-right:6px}
+@media(max-width:1100px){.result-pane{height:400px;min-height:240px}}
+#tutor-panel:has(.chat-message) .tutor-intro{display:none}
+#question{max-height:120px}
+
+@media(min-width:1101px){.lesson-shell{grid-template-rows:minmax(0,1fr)}.lesson-shell>*{min-height:0}}
+
+#chat .chat-message .md{white-space:normal;line-height:1.75}
+#chat .md p{margin:0 0 10px}
+#chat .md p:last-child,#chat .md ul:last-child,#chat .md ol:last-child,#chat .md pre:last-child{margin-bottom:0}
+#chat .md h4{font-size:11px;font-weight:650;color:#e0ebf5;margin:14px 0 6px}
+#chat .md ul,#chat .md ol{margin:0 0 10px;padding-left:18px}
+#chat .md li{margin-bottom:4px}
+#chat .md li::marker{color:#8db775}
+#chat .md strong{color:#e6f0f8;font-weight:650}
+#chat .md em{color:#d3e0ec}
+#chat .md code{font:10.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:#223044;color:#c7e3a8;padding:1px 5px;border-radius:3px}
+#chat .md pre.md-code{position:relative;margin:8px 0 12px;padding:12px;background:#0b121b;border:1px solid #2a3a4e;border-radius:6px;overflow-x:auto;scrollbar-width:thin}
+#chat .md pre.md-code code{background:transparent;padding:0;color:#cfe0ef;font:10.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+#chat .md .md-lang{position:absolute;top:4px;right:8px;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#5f7790}
+
+.learn-walkthrough{margin:24px 0;padding:16px;background:#eef1f6;border:1px solid #d3dae6;border-radius:8px}
+.learn-walkthrough h3{margin:6px 0 12px}
+.learn-walkthrough ol{margin:0;padding-left:20px}
+.learn-walkthrough li{margin-bottom:12px}
+.learn-walkthrough li::marker{color:#5b7090;font-weight:650}
+.narrative .learn-walkthrough .walk-code{display:inline-block;font:11px/1.6 ui-monospace,SFMono-Regular,monospace;background:#dfe5ee;color:#2b3b55;padding:3px 7px;border-radius:4px;margin-bottom:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.learn-walkthrough p{margin:0;font-size:12px;line-height:1.75}
+.learn-deeper{margin:24px 0;border:1px solid #c9d4c0;border-radius:8px;background:#f8faf3}
+.learn-deeper summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.learn-deeper summary::-webkit-details-marker{display:none}
+.learn-deeper summary span{font-weight:650;color:#2f4d33;font-size:13px}
+.learn-deeper summary span::before{content:'▸ ';color:#6b8f5a}
+.learn-deeper[open] summary span::before{content:'▾ '}
+.learn-deeper summary small{font-size:10px;color:#7a8a72}
+.learn-deeper section{padding:0 16px 6px;border-top:1px solid #e1e7da}
+.learn-deeper h4{font-size:12px;color:#22343d;margin:14px 0 8px}
+.learn-deeper p{font-size:12px;line-height:1.8}

@@ -7,7 +7,10 @@
     "start": "node server.mjs",
     "test": "node --test",
     "doctor": "node scripts/doctor.mjs",
-    "package": "python3 scripts/package-release.py"
+    "package": "python3 scripts/package-release.py",
+    "setup:llm": "python3 scripts/setup-llm.py",
+    "verify:llm": "node scripts/verify-llm.mjs",
+    "audit:llm": "node scripts/audit-exercises.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -36,9 +36,9 @@ export function legacyProblem(exercise,language,{builtin=false,id,stage}={}){
   else requirements.push(sentence);
  }
  const code=exercise.starter||'';
- const signatures=language==='go'?[...code.matchAll(/func\s+(?:\([^)]*\)\s*)?\w+\([^)]*\)[^{\n]*/g)].map(m=>m[0].trim()):language==='python'?[...code.matchAll(/^\s*def\s+[^\n]+:/gm)].map(m=>m[0].trim()):[...code.matchAll(/(?:export\s+)?(?:async\s+)?function\s+\w+\([^)]*\)/g)].map(m=>m[0]);
- const signature=signatures.find(s=>!/^func main\(/.test(s))||signatures[0];
- const name=signature?.match(/(?:func|def|function)\s+(\w+)/)?.[1];
+ const signatures=language==='go'?[...code.matchAll(/func\s+(?:\([^)]*\)\s*)?\w+\([^)]*\)[^{\n]*/g)].map(m=>m[0].trim()):language==='python'?[...code.matchAll(/^\s*def\s+[^\n]+:/gm)].map(m=>m[0].trim()):language==='java'?[...code.matchAll(/^\s*(?:public\s+|private\s+|protected\s+)?(?:static\s+)?[\w<>\[\],\s]+?\s+\w+\([^)]*\)\s*(?=\{)/gm)].map(m=>m[0].trim()).filter(s=>!/^(?:if|for|while|switch|return|new)\b/.test(s)):[...code.matchAll(/(?:export\s+)?(?:async\s+)?function\s+\w+\([^)]*\)/g)].map(m=>m[0]);
+ const signature=signatures.find(s=>!/^func main\(|static void main\(/.test(s))||signatures[0];
+ const name=signature?.match(/(?:func|def|function)\s+(\w+)/)?.[1]||(language==='java'?signature?.match(/(\w+)\(/)?.[1]:undefined);
  return {title:name?`Implement ${name}`:'Your task',description:requirements.length?[requirements.shift()]:[],requirements,constraints,exampleNotes,examples,details,signature,...(builtin?builtinExamples[`${id}:${stage}`]:{})};
 }
 export function renderProblem(problem,stage){
