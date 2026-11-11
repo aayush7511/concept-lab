@@ -85,7 +85,7 @@ const server=http.createServer(async(req,res)=>{
    res.setHeader('Set-Cookie',`concept_session=${session}; HttpOnly; SameSite=Strict; Path=/`);
    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});return res.end(await readFile(path.join(directory,'public',pages[url.pathname])));
   }
-  if(req.method==='GET'&&['/app.js','/labs.js','/archive.js','/learn.js','/problem.js','/style.css','/connect.js','/connect.css'].includes(url.pathname)){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.js')?'text/javascript':'text/css','Cache-Control':'no-cache'});return res.end(await readFile(path.join(directory,'public',url.pathname)));}
+  if(req.method==='GET'&&['/app.js','/labs.js','/archive.js','/learn.js','/problem.js','/tutor-md.js','/style.css','/connect.js','/connect.css'].includes(url.pathname)){res.writeHead(200,{'Content-Type':url.pathname.endsWith('.js')?'text/javascript':'text/css','Cache-Control':'no-cache'});return res.end(await readFile(path.join(directory,'public',url.pathname)));}
   json(res,404,{error:'Not found'});
  }catch(e){if(!res.headersSent)json(res,400,{error:e.message||'Request failed.'});else res.end();}
 });

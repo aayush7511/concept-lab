@@ -4,7 +4,7 @@ import { basics } from './lessons-basics.mjs';
 import { modern } from './lessons-modern.mjs';
 import { spring } from './lessons-spring.mjs';
 
-export const javaVersion = 2;
+export const javaVersion = 4;
 const all = [...basics, ...modern, ...spring];
 export const javaLessons = Object.fromEntries(all.map(l => [l.id, l]));
 

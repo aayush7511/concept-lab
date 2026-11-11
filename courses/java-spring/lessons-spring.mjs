@@ -1,5 +1,5 @@
 // Spring nanolessons: one idea each. Verified exercises are reused from spring-source.mjs.
-import { lesson, conceptLesson, program, checks } from './helpers.mjs';
+import { lesson, conceptLesson, program, checks, learn } from './helpers.mjs';
 import { spring as v1, HASH, JWT, sha, jwtHelpers } from './spring-source.mjs';
 
 const S = 'https://docs.spring.io/';
@@ -14,27 +14,366 @@ function trimmed(id, title, keep, overview) {
   return l;
 }
 
+// Reuse a verified lesson's exercises but replace Learn with a fully rewritten, beginner-first version.
+function rewritten(id, title, o) {
+  const l = src(id);
+  l.title = title; l.minutes = 8;
+  l.learn = learn({ ...o, tryIt: o.tryIt || l.learn.tryIt });
+  return l;
+}
+
 const userRepo = 'class User {\n    Long id;\n    String email;\n    User(String email) { this.email = email; }\n}';
 const rideRec = 'record Ride(Long id, String driver, String destination, int seats) {}';
 
 export const spring = [
 
-trimmed('annotations', 'Annotations are labels Spring reads at runtime', [0, 1]),
-trimmed('injection', 'A class receives its dependencies through the constructor', [0, 1]),
+rewritten('annotations', "Annotations are labels Spring reads at runtime", {
+  "overview": "An annotation is a label that starts with @, like `@GetMapping(\"/api/test\")`, placed on a class, method, or field. On its own a label does nothing. Spring reads these labels when the app starts and acts on them: `@GetMapping` turns a method into a web endpoint.",
+  "goals": [
+    "Explain what an annotation is and why it does nothing by itself.",
+    "Read each part of an annotation declaration: `@interface`, `value()`, and `@Retention`.",
+    "Describe how Spring uses reflection to find labels and act on them."
+  ],
+  "diagram": [
+    "From label to behavior",
+    [
+      [
+        "@GetMapping(\"/api/test\")",
+        "You put a label on the `test()` method."
+      ],
+      [
+        "@Retention(RUNTIME)",
+        "The label is kept in the compiled program, so it still exists while the app runs."
+      ],
+      [
+        "Spring starts",
+        "It looks at every method in your controller classes."
+      ],
+      [
+        "getAnnotation(...)",
+        "For each method it asks: does this one carry a @GetMapping label?"
+      ],
+      [
+        "Route registered",
+        "If it does, requests to that path now call that method."
+      ]
+    ]
+  ],
+  "sections": [
+    [
+      "What an annotation is",
+      [
+        "An annotation is a label written as @ plus a name, placed right above a class, method, or field. `@GetMapping(\"/api/test\")` sits above the `test()` method.",
+        "The label adds information about the code but runs no code itself. Reading the label and doing something about it is another program's job, here Spring's.",
+        "Some labels carry a value. In `@GetMapping(\"/api/test\")`, the text in parentheses is the web path this method should answer."
+      ],
+      "@GetMapping(\"/api/test\")        // the label and its value\npublic String test() {           // the method it labels\n    return \"CometCarpool backend is up and running\";\n}"
+    ],
+    [
+      "Declaring your own annotation",
+      [
+        "`@interface GetMapping` declares a new annotation type named GetMapping. The @ in front of `interface` is what makes it an annotation instead of a normal interface.",
+        "`String value();` declares one setting the label holds. Writing `@GetMapping(\"/api/test\")` stores that text in `value`, and code reads it back by calling `value()`.",
+        "`@Retention(RetentionPolicy.RUNTIME)` is a label on the label. It tells Java to keep GetMapping visible while the program runs. Without it, running code cannot see the label at all."
+      ],
+      "@Retention(RetentionPolicy.RUNTIME)  // keep this label at runtime\n@interface GetMapping {             // a new annotation type\n    String value();                 // the path, e.g. \"/api/test\"\n}"
+    ],
+    [
+      "Reflection: code that inspects code",
+      [
+        "Reflection means a running program looking at its own classes: listing their methods, checking their labels, and calling methods it found. Spring is built on it.",
+        "`TestController.class.getDeclaredMethods()` returns every method written in TestController. In the example that is `test` and `helper`.",
+        "`m.getAnnotation(GetMapping.class)` asks method `m` for its GetMapping label. It returns the label if there is one and null if not, which is why the example checks `g != null`.",
+        "`m.invoke(new TestController())` calls method `m` on a new TestController. It does the same as `controller.test()`, except the method is chosen while the program runs."
+      ],
+      "for (Method m : TestController.class.getDeclaredMethods()) {\n    GetMapping g = m.getAnnotation(GetMapping.class);\n    if (g != null) {                       // only labeled methods\n        System.out.println(g.value() + \" -> \" + m.invoke(new TestController()));\n    }\n}"
+    ]
+  ],
+  "walkthrough": [
+    "What the example does, step by step",
+    [
+      [
+        "TestController.class.getDeclaredMethods()",
+        "Java hands back TestController's two methods, `test` and `helper`. The loop visits them one at a time (Java does not promise an order)."
+      ],
+      [
+        "m.getAnnotation(GetMapping.class)   // m is test",
+        "`test` has `@GetMapping(\"/api/test\")`, so `g` is that label. `g` is not null, so the if body runs."
+      ],
+      [
+        "g.value() + \" -> \" + m.invoke(...)",
+        "`g.value()` is \"/api/test\". `invoke` calls `test()`, which returns \"CometCarpool backend is up and running\"."
+      ],
+      [
+        "System.out.println(...)",
+        "Prints: /api/test -> CometCarpool backend is up and running"
+      ],
+      [
+        "m.getAnnotation(GetMapping.class)   // m is helper",
+        "`helper` has no label, so `g` is null. The if is skipped and `helper` is never called. That is what \"not routed\" means."
+      ],
+      [
+        "",
+        "Spring does the same thing at startup across all your classes: every method with a mapping label becomes a route, and every other method is ignored."
+      ]
+    ]
+  ],
+  "misconception": "An annotation never runs code by itself. `@GetMapping` works only because Spring reads it at startup. A label that no code ever looks for changes nothing.",
+  "takeaway": "Annotations are labels. Frameworks like Spring use reflection to find them and turn them into behavior.",
+  "deeper": [
+    [
+      "What the CometCarpool labels tell Spring",
+      [
+        "`@RestController` marks a class whose methods answer web requests and return data, like text or JSON, directly. `@RequestMapping(\"/api\")` on the class adds a path prefix, so `@GetMapping(\"/test\")` on a method becomes `GET /api/test`.",
+        "`@Service`, `@Repository`, and `@Component` mark classes Spring should create and manage. `@Entity` marks a class that maps to a database table. Each label is read by a different part of Spring or JPA."
+      ]
+    ],
+    [
+      "The three retention levels",
+      [
+        "SOURCE: the label exists only in your .java file and the compiler throws it away. `@Override` works this way: the compiler checks it, then drops it. CLASS, the default, keeps the label in the .class file but hides it from reflection. RUNTIME keeps it visible to reflection.",
+        "That is why, in the Predict step, `@Note` (no @Retention, so CLASS) is invisible to `isAnnotationPresent`, while `@Service` (RUNTIME) is found. Every Spring annotation is RUNTIME."
+      ]
+    ],
+    [
+      "Common bug: the label is right but nothing happens",
+      [
+        "If a class has `@GetMapping` methods but is missing `@RestController`, Spring never looks inside it and the endpoint returns 404. The code compiles fine, because the compiler never checks whether anyone reads a label.",
+        "The same happens when the class sits outside the package Spring scans. The lesson \"Spring only scans its own package and below\" covers that case."
+      ]
+    ],
+    [
+      "Why the example says throws Exception",
+      [
+        "`m.invoke(...)` can fail in ways the compiler cannot check ahead of time: the method might be private, or might throw an exception itself. So `invoke` declares checked exceptions, and the example's `main` uses `throws Exception` to let them pass through.",
+        "Spring handles all of this for you, which is why your controllers never touch reflection directly."
+      ]
+    ]
+  ]
+}),
+rewritten('injection', "A class receives its dependencies through the constructor", {
+  "overview": "A dependency is an object a class needs to do its job: UserService needs a UserRepository. With dependency injection the class does not create that object with `new`. It asks for it in its constructor, and whoever builds the class passes it in: Spring in the app, you in a test.",
+  "goals": [
+    "Explain what a dependency is and what \"injecting\" one means.",
+    "Write a class that receives its dependency through the constructor.",
+    "Explain why Spring creates one shared object, a bean, per class."
+  ],
+  "diagram": [
+    "Who builds what in the example",
+    [
+      [
+        "new MemoryUserRepository()",
+        "Built first, because it needs nothing."
+      ],
+      [
+        "new UserService(repo)",
+        "The repository is passed in through the constructor."
+      ],
+      [
+        "new UserController(service)",
+        "The service is passed in the same way."
+      ],
+      [
+        "c.post(...)",
+        "The controller calls the service, which calls the repository."
+      ]
+    ]
+  ],
+  "sections": [
+    [
+      "What a dependency is",
+      [
+        "A dependency is an object a class needs to do its work. UserService must check whether an email already exists, so it depends on a UserRepository.",
+        "UserService could make one itself with `new MemoryUserRepository()`. But then it is stuck with that exact class: switching to the real database, or to a fake in a test, means editing UserService.",
+        "Dependency injection means the class receives the object from outside instead. \"Injecting\" is just passing it in as a constructor argument, so whoever builds UserService decides which repository it gets."
+      ]
+    ],
+    [
+      "Asking through the constructor",
+      [
+        "`private final UserRepository repo;` declares a field to hold the dependency. `private` hides it from other classes. `final` means it must be set once, in the constructor, and can never be reassigned.",
+        "The constructor `UserService(UserRepository repo)` lists the dependency as a parameter, and `this.repo = repo;` stores it in the field, exactly like the constructors in T1.",
+        "The parameter's type is the interface UserRepository, not one specific class. Any object that implements the interface can be passed in, which is what makes swapping easy."
+      ],
+      "class UserService {\n    private final UserRepository repo;   // the dependency\n\n    UserService(UserRepository repo) {   // ask for it\n        this.repo = repo;                // keep it\n    }\n}"
+    ],
+    [
+      "Spring does the wiring",
+      [
+        "In the real app you never write these `new` calls. Spring creates every class marked `@Service`, `@Repository`, or `@RestController` at startup. Each object Spring creates and manages is called a bean.",
+        "Spring reads each constructor's parameters, builds those beans first, and passes them in. By default it makes just one bean per class and shares it with everyone who asks for it."
+      ]
+    ]
+  ],
+  "walkthrough": [
+    "How the example wires itself and runs",
+    [
+      [
+        "UserRepository repo = new MemoryUserRepository();",
+        "Build the dependency first. This fake repository says only \"ana@utdallas.edu\" exists."
+      ],
+      [
+        "UserService service = new UserService(repo);",
+        "Pass the repository in. The constructor stores it in the field `repo`."
+      ],
+      [
+        "UserController c = new UserController(service);",
+        "The same pattern one level up: the controller receives the service and stores it."
+      ],
+      [
+        "c.post(\"ana@utdallas.edu\")",
+        "The controller calls `service.register`, which calls `repo.existsByEmail`. That returns true, so `register` returns \"duplicate\"."
+      ],
+      [
+        "System.out.println(...)",
+        "Prints: POST /api/users -> duplicate"
+      ],
+      [
+        "c.post(\"ben@utdallas.edu\")",
+        "This time `existsByEmail` is false, so it prints: POST /api/users -> ok"
+      ]
+    ]
+  ],
+  "misconception": "Spring does not create a new UserService for every request. It builds one and shares it, so storing per-user data in its fields is a bug: every user would see the same value.",
+  "takeaway": "Ask for what you need in the constructor and keep it in a final field. The caller, Spring or your test, decides which object you get.",
+  "deeper": [
+    [
+      "How Spring decides the build order",
+      [
+        "At startup Spring reads every bean's constructor and works out who needs whom. It creates beans with no dependencies first, then the ones that need them. In CometCarpool that is roughly UserRepository and PasswordEncoder, then UserService, then UserController.",
+        "When a class has exactly one constructor, Spring uses it automatically. Older code puts `@Autowired` on the constructor; with a single constructor that label is optional."
+      ]
+    ],
+    [
+      "Beans are shared (singletons)",
+      [
+        "By default Spring creates one bean per class and hands that same object to everyone who asks. This is called singleton scope. It is safe as long as the bean keeps no per-request data in its fields.",
+        "The Predict step shows the idea: two objects given the same Counter both add to one shared count."
+      ]
+    ],
+    [
+      "@Bean methods: beans for classes you don't own",
+      [
+        "You cannot put `@Service` on a library class like PasswordEncoder, because you don't own its source code. Instead, a method marked `@Bean` inside a `@Configuration` class creates the object, and Spring treats what it returns as a bean. SecurityConfig's `passwordEncoder()` works this way."
+      ]
+    ],
+    [
+      "Common startup errors",
+      [
+        "\"No qualifying bean of type X\": some constructor asks for an X, but Spring never created one. Usually the class is missing its annotation or sits outside the scanned package.",
+        "\"The dependencies of some of the beans form a cycle\": A needs B and B needs A through their constructors, so neither can be built first. It usually means one class is doing too much and should be split."
+      ]
+    ]
+  ]
+}),
 
 conceptLesson({
   id: 'maven', title: 'pom.xml decides what\'s on the classpath', file: 'pom.xml',
   explanation: ['Maven reads pom.xml, downloads each dependency, and builds the app; ./mvnw runs a pinned Maven.', 'A Spring Boot "starter" is one dependency that pulls in a whole feature.'],
-  overview: 'Every library the backend uses is listed in pom.xml. spring-boot-starter-webmvc brings controllers and JSON, data-jpa brings repositories, security brings the filter chain. If it isn\'t in pom.xml, the code can\'t use it.',
-  goals: ['Match each starter in pom.xml to its feature.', 'Know when a pom.xml change takes effect.'],
-  diagram: ['./mvnw spring-boot:run', [['Read pom.xml', 'Resolve dependencies'], ['Compile', 'src/main/java into target/classes'], ['Run', 'BackendApplication.main']]],
+  overview: "A Java project uses code written by others, called libraries or dependencies. pom.xml lists them. Maven, the build tool, reads that list, downloads each library, and puts it on the classpath: the places Java searches for classes. If a library isn't in pom.xml, your code cannot use it.",
+  goals: [
+  "Explain what pom.xml, Maven, and the classpath each are.",
+  "Match each Spring Boot starter in pom.xml to the feature it brings.",
+  "Know when a change to pom.xml actually takes effect."
+],
+  diagram: [
+  "What ./mvnw spring-boot:run does",
+  [
+    [
+      "Read pom.xml",
+      "Maven reads the list of dependencies."
+    ],
+    [
+      "Download",
+      "Any library not yet on your machine is fetched from Maven Central and cached in ~/.m2."
+    ],
+    [
+      "Compile",
+      "Your files in src/main/java become .class files in target/classes."
+    ],
+    [
+      "Run",
+      "Java starts BackendApplication.main with every library on the classpath."
+    ]
+  ]
+],
   sections: [
-    ['Starters', ['spring-boot-starter-parent pins compatible versions.', 'webmvc: REST + JSON. data-jpa: Hibernate + repositories. security: auth. validation: @Valid. postgresql: the JDBC driver. jjwt: tokens.']],
-    ['Commands', ['./mvnw spring-boot:run starts the app; ./mvnw test runs tests; ./mvnw package builds a jar.', 'After editing pom.xml, Maven must reload before the new library exists for your code.']],
+  [
+    "Maven and pom.xml",
+    [
+      "Maven is a build tool: a program that downloads libraries, compiles your code, runs your tests, and packages the app. pom.xml (Project Object Model) is its instruction file.",
+      "Each `<dependency>` entry names one library by its group and artifact name. Maven downloads it, plus every library that one needs in turn.",
+      "`./mvnw` is the Maven wrapper: a script in the repo that downloads and runs the exact Maven version the project expects, so every teammate builds the same way."
+    ]
   ],
-  misconception: 'Adding a dependency to pom.xml does nothing for an app that is already running. Reload and restart.',
-  takeaway: 'pom.xml is the backend\'s shopping list.',
+  [
+    "Starters: one line, a whole feature",
+    [
+      "A starter is a dependency that pulls in a whole bundle of libraries for one feature. You add one entry instead of ten.",
+      "In CometCarpool the webmvc starter brings controllers and JSON, data-jpa brings repositories and Hibernate, security brings the login filter chain, validation brings `@Valid`, and postgresql is the database driver.",
+      "`spring-boot-starter-parent` at the top of the file pins versions that are known to work together. That is why most starters list no version of their own."
+    ]
+  ],
+  [
+    "The classpath",
+    [
+      "The classpath is the list of folders and .jar files Java searches whenever your code mentions a class. Maven builds it from pom.xml.",
+      "When you write `import jakarta.persistence.Entity;`, that class must be on the classpath. If its library is missing from pom.xml, compiling fails with \"package jakarta.persistence does not exist\"."
+    ]
+  ]
+],
+  walkthrough: [
+  "You add the validation starter. What happens?",
+  [
+    [
+      "<artifactId>spring-boot-starter-validation</artifactId>",
+      "You save the new dependency in pom.xml. Nothing changes yet: your IDE and the running app still use the old classpath."
+    ],
+    [
+      "Reload Maven",
+      "Your IDE's Maven reload button, or the next ./mvnw command, re-reads pom.xml and downloads the new library into ~/.m2."
+    ],
+    [
+      "Compile",
+      "Code that uses `@Valid` now compiles, because the validation library is on the classpath."
+    ],
+    [
+      "Restart the app",
+      "A running app loaded its classes when it started. Only a restart picks up the new library, and only then does `@Valid` actually check anything."
+    ]
+  ]
+],
+  misconception: "Editing pom.xml does nothing to an app that is already running. Maven has to reload the file and the app has to restart before a new library exists for your code.",
+  takeaway: "pom.xml is the project's shopping list. Maven fetches what it lists and puts it on the classpath; anything not listed doesn't exist to your code.",
   tryIt: 'Open comet-carpool/src/backend/pom.xml and find spring-boot-starter-security.',
+  deeper: [
+  [
+    "Transitive dependencies",
+    [
+      "Libraries depend on other libraries. Adding data-jpa also downloads Hibernate, the database connection layer, and dozens more. These are called transitive dependencies.",
+      "`./mvnw dependency:tree` prints the whole tree. It is the first thing to check when two libraries want different versions of the same thing."
+    ]
+  ],
+  [
+    "Scopes: when a library is available",
+    [
+      "A dependency can have a `<scope>`. The default, compile, is available everywhere. `test` is only on the classpath while tests run, which is where JUnit and Mockito belong. `runtime` is needed to run but not to compile, which commonly fits a database driver like postgresql."
+    ]
+  ],
+  [
+    "Where downloads and build output go",
+    [
+      "Maven caches every downloaded library in ~/.m2/repository on your machine. The first build is slow because it downloads everything; later builds reuse the cache.",
+      "target/ holds Maven's output: compiled classes and the packaged .jar. It is generated, so it stays out of git."
+    ]
+  ],
+  [
+    "Commands worth knowing",
+    [
+      "`./mvnw spring-boot:run` compiles and starts the app. `./mvnw test` runs the tests. `./mvnw package` builds a runnable .jar in target/. `./mvnw clean` deletes target/ when a build seems stuck on old output."
+    ]
+  ]
+],
   example: 'Open pom.xml in comet-carpool/src/backend and read the dependencies list. This is a conceptual checkpoint; no code runs.',
   predict: { prompt: 'You delete spring-boot-starter-data-jpa from pom.xml and rebuild. What breaks? A: UserRepository and @Entity no longer compile; B: only the tests; C: nothing, since Spring Boot includes JPA anyway.', answer: 'A', explanation: 'JPA annotations and JpaRepository come from that starter. Without it, those imports don\'t resolve.' },
   guided: { title: 'Add a library', prompt: 'You want Swagger API docs (from the tech stack doc). Which change adds them? A: copy the Swagger jar into src/main/java; B: add the springdoc-openapi dependency to pom.xml and reload Maven; C: import it in BackendApplication.java only.', answer: 'B', hints: ['Libraries are declared, not copied.', 'Maven downloads what pom.xml lists.', 'Answer with the letter about pom.xml.'] },
@@ -45,16 +384,111 @@ conceptLesson({
 conceptLesson({
   id: 'component-scan', title: 'Spring only scans its own package and below', file: 'BackendApplication.java',
   explanation: ['@SpringBootApplication scans the package it is in, plus every subpackage, for @Service, @RestController, and so on.', 'A class outside com.cometcarpool.backend is never found.'],
-  overview: 'BackendApplication lives in com.cometcarpool.backend. At startup Spring scans that package and everything under it (controller, service, repository...) and creates a bean for each annotated class.',
-  goals: ['Predict whether Spring will find a class.', 'Diagnose "No qualifying bean" errors.'],
-  diagram: ['Scanning from com.cometcarpool.backend', [['.controller.UserController', 'Found'], ['.service.UserService', 'Found'], ['com.cometcarpool.util.X', 'Not found: outside the root']]],
+  overview: "Spring only creates beans for classes it can find. It finds them by scanning: starting at the package of the class marked `@SpringBootApplication` (com.cometcarpool.backend) and searching every package below it. A class anywhere else is never found, even if it has `@Service`.",
+  goals: [
+  "Explain what a package is and what component scanning does.",
+  "Predict whether Spring will find a given class.",
+  "Diagnose a \"No qualifying bean\" startup error."
+],
+  diagram: [
+  "Scanning from com.cometcarpool.backend",
+  [
+    [
+      "com.cometcarpool.backend",
+      "Where BackendApplication lives. Scanning starts here."
+    ],
+    [
+      ".controller.UserController",
+      "Below the start package: found."
+    ],
+    [
+      ".service.UserService",
+      "Below the start package: found."
+    ],
+    [
+      "com.cometcarpool.util.RideMatcher",
+      "Beside backend, not below it: never found."
+    ]
+  ]
+],
   sections: [
-    ['The rule', ['Scanning starts at the @SpringBootApplication class\'s package.', 'Put every new package (ride, message, review) under com.cometcarpool.backend.']],
-    ['The symptom', ['If a needed class isn\'t scanned, startup fails: "No qualifying bean of type ...".', 'The code still compiles, so the error appears only at runtime.']],
+  [
+    "Packages are folders for classes",
+    [
+      "A package groups related classes, like a folder. The first line of a Java file, such as `package com.cometcarpool.backend.service;`, says which package the file belongs to.",
+      "Packages nest using dots. com.cometcarpool.backend.service is inside com.cometcarpool.backend, which is inside com.cometcarpool. The folders under src/main/java match the package names exactly."
+    ]
   ],
-  misconception: 'Compiling isn\'t enough. A class can compile and still never become a bean.',
-  takeaway: 'New code goes under the main package.',
+  [
+    "How scanning works",
+    [
+      "`@SpringBootApplication` on BackendApplication turns on component scanning. Spring starts at that class's own package and walks through every package beneath it.",
+      "In each class it finds, Spring checks for labels like `@Service`, `@Repository`, `@RestController`, and `@Configuration`. Every labeled class becomes a bean.",
+      "Anything outside that tree is skipped completely, even with the right label. Spring simply never looks there."
+    ]
+  ],
+  [
+    "What it looks like when a class is missed",
+    [
+      "The code still compiles, because the compiler knows nothing about Spring's scanning. The problem only appears when the app starts.",
+      "Spring tries to build a class that asks for the missing one in its constructor, and fails with \"No qualifying bean of type RideMatcher\". The fix is to move the class under com.cometcarpool.backend."
+    ]
+  ]
+],
+  walkthrough: [
+  "Starting the app with a misplaced RideMatcher",
+  [
+    [
+      "@SpringBootApplication",
+      "Spring sees BackendApplication is in com.cometcarpool.backend and starts scanning there."
+    ],
+    [
+      "@Service class RideService",
+      "Found under .service. Its constructor asks for a RideMatcher, so Spring needs that bean too."
+    ],
+    [
+      "package com.cometcarpool.util;",
+      "RideMatcher lives here, beside backend rather than under it. The scan never visits it, so no bean is made."
+    ],
+    [
+      "No qualifying bean of type RideMatcher",
+      "Spring cannot call RideService's constructor without a RideMatcher, so startup stops with this error."
+    ],
+    [
+      "package com.cometcarpool.backend.ride;",
+      "Move the file there and update its package line. Restart, and the scan finds it."
+    ]
+  ]
+],
+  misconception: "Compiling is not the same as being found. A class can compile perfectly, carry `@Service`, and still never become a bean because it sits outside the scanned packages.",
+  takeaway: "Spring scans from BackendApplication's package downward. Put all new backend code under com.cometcarpool.backend.",
   tryIt: 'List the subpackages under src/main/java/com/cometcarpool/backend.',
+  deeper: [
+  [
+    "Why Spring scans instead of a list",
+    [
+      "Without scanning you would register every class by hand in one big list. Scanning lets you add a class with `@Service` and have it picked up automatically. The price is the rule that it must live under the start package."
+    ]
+  ],
+  [
+    "Changing where scanning starts",
+    [
+      "`@SpringBootApplication(scanBasePackages = \"com.cometcarpool\")` widens the scan. It works, but most projects keep the default and arrange their packages to match, because a wider scan can pick up classes you never meant to include."
+    ]
+  ],
+  [
+    "Entities and repositories follow the same rule",
+    [
+      "By default, JPA looks for `@Entity` classes and Spring Data looks for repository interfaces starting from the same package. An entity outside it fails differently, often with \"Not a managed type\"."
+    ]
+  ],
+  [
+    "Reading the full error",
+    [
+      "Spring Boot usually reports: \"Parameter 0 of constructor in ...RideService required a bean of type ...RideMatcher that could not be found.\" Read it as three facts: who needed it (RideService), which parameter (the first), and what was missing (RideMatcher)."
+    ]
+  ]
+],
   example: 'Read the scanning map on the left, then look at the package line at the top of each CometCarpool file. This is a conceptual checkpoint; no code runs.',
   predict: { prompt: 'A teammate adds @Service class RideMatcher in package com.cometcarpool.util and injects it into RideService. What happens at startup? A: Spring finds it; B: startup fails with "No qualifying bean of type RideMatcher"; C: Maven refuses to compile.', answer: 'B', explanation: 'com.cometcarpool.util is not under com.cometcarpool.backend, so it is never scanned.' },
   guided: { title: 'Fix the missing bean', prompt: 'Which change fixes RideMatcher being missing? A: move it to com.cometcarpool.backend.ride (and update its package line); B: add more @Service annotations; C: make the class public static.', answer: 'A', hints: ['What decides what Spring scans?', 'Get the class under the main package.', 'Answer with the letter that moves it.'] },
@@ -65,16 +499,105 @@ conceptLesson({
 conceptLesson({
   id: 'properties', title: 'application.properties configures the app', file: 'application.properties',
   explanation: ['application.properties holds settings such as the database URL, username, and password.', '${DB_PASSWORD} placeholders read environment variables, keeping secrets out of git.'],
-  overview: 'The backend connects to Postgres using spring.datasource.* settings in application.properties. Today it contains a teammate\'s personal username (known issue #12). Placeholders like ${DB_PASSWORD} fix that.',
-  goals: ['Read a properties file.', 'Move secrets to environment variables.'],
-  diagram: ['spring.datasource.password=${DB_PASSWORD}', [['Startup', 'Spring reads the file'], ['${DB_PASSWORD}', 'Looked up in the environment'], ['Connect', 'Each developer uses their own value']]],
+  overview: "application.properties is a settings file Spring reads at startup. Each line is a key, an equals sign, and a value, like the database URL. A value such as `${DB_PASSWORD}` is a placeholder: Spring fills it in from an environment variable, so passwords never have to be committed to git.",
+  goals: [
+  "Read the key=value lines in application.properties.",
+  "Explain what an environment variable is and how `${NAME}` reads one.",
+  "Move a secret out of the file and into the environment."
+],
+  diagram: [
+  "spring.datasource.password=${DB_PASSWORD}",
+  [
+    [
+      "Startup",
+      "Spring reads application.properties line by line."
+    ],
+    [
+      "${DB_PASSWORD}",
+      "It sees a placeholder and looks up DB_PASSWORD in the environment."
+    ],
+    [
+      "Value found",
+      "The placeholder is replaced with that value."
+    ],
+    [
+      "Connect",
+      "The database connection uses each developer's own password."
+    ]
+  ]
+],
   sections: [
-    ['What\'s in it', ['spring.datasource.url / username / password: the DB connection.', 'spring.jpa.hibernate.ddl-auto=update and show-sql=true: Hibernate settings.']],
-    ['Placeholders', ['${NAME} reads an environment variable; ${NAME:default} adds a fallback.', 'Set it in your shell (export DB_PASSWORD=...) or your IDE run config.']],
+  [
+    "Keys and values",
+    [
+      "Each line is `key=value`. The key names a setting and the value is what it is set to. Dots in a key group related settings, like folders.",
+      "`spring.datasource.url`, `.username`, and `.password` tell Spring how to connect to Postgres. `spring.jpa.hibernate.ddl-auto=update` lets Hibernate adjust tables to match your entities, and `show-sql=true` prints each SQL query it runs.",
+      "The file lives in src/main/resources, so it is packaged with the app and every teammate gets the same copy from git."
+    ]
   ],
-  misconception: 'Deleting a secret from the file later doesn\'t remove it from git history. Keep it out from the start.',
-  takeaway: 'Config in the file, secrets in the environment.',
+  [
+    "Placeholders read the environment",
+    [
+      "An environment variable is a named value set outside your program, in your terminal session or your IDE's run settings. `export DB_PASSWORD=secret` sets one in a terminal.",
+      "`${DB_PASSWORD}` in a value means \"use the environment variable DB_PASSWORD here\". Spring swaps in the real value at startup.",
+      "`${DB_USER:postgres}` adds a default after the colon: use DB_USER if it is set, and postgres if it is not."
+    ]
+  ]
+],
+  walkthrough: [
+  "Starting the app with a placeholder password",
+  [
+    [
+      "export DB_PASSWORD=mypass",
+      "You set the environment variable in the same terminal you will start the app from."
+    ],
+    [
+      "./mvnw spring-boot:run",
+      "The app starts and inherits that terminal's environment variables."
+    ],
+    [
+      "spring.datasource.password=${DB_PASSWORD}",
+      "Spring reads the line, sees the placeholder, looks up DB_PASSWORD, and finds \"mypass\"."
+    ],
+    [
+      "Connect to Postgres",
+      "The connection uses mypass. The committed file never contained the real password."
+    ],
+    [
+      "A new terminal, no export",
+      "Start the app without setting DB_PASSWORD: there is no value and no default, so startup fails while setting up the database connection."
+    ]
+  ]
+],
+  misconception: "Removing a password from the file in a later commit does not remove it from git. It stays in the history forever, so keep secrets out of committed files from the start.",
+  takeaway: "Settings go in application.properties; secrets come from environment variables through `${NAME}` placeholders.",
   tryIt: 'Find spring.datasource.username in comet-carpool\'s application.properties.',
+  deeper: [
+  [
+    "Which value wins when a setting is defined twice",
+    [
+      "Spring merges several sources, and environment variables and command-line arguments override the file. Setting the environment variable SPRING_DATASOURCE_URL overrides spring.datasource.url without editing anything: Spring maps dots to underscores and ignores case."
+    ]
+  ],
+  [
+    "The exact error for a missing value",
+    [
+      "With no value and no default, startup fails with a message like \"Could not resolve placeholder 'DB_PASSWORD' in value \\\"${DB_PASSWORD}\\\"\". It names the variable, so the fix is to set it or add a default."
+    ]
+  ],
+  [
+    "Profiles: different settings per environment",
+    [
+      "A file named application-dev.properties is used only when the dev profile is active, for example with `spring.profiles.active=dev`. Teams use profiles to keep local and production settings apart."
+    ]
+  ],
+  [
+    "Why CometCarpool's known issue matters",
+    [
+      "Today the committed file contains a teammate's personal database username (issue #12). Everyone else must edit the file to run the app, and those edits risk being committed. Placeholders with defaults fix both problems."
+    ]
+  ]
+],
   example: 'Open src/backend/src/main/resources/application.properties and read each line. This is a conceptual checkpoint; no code runs.',
   predict: { prompt: 'application.properties says spring.datasource.password=${DB_PASSWORD} and you start the app without setting DB_PASSWORD. What happens? A: startup fails resolving the placeholder or connecting; B: Spring uses an empty password and connects; C: Spring asks you to type it.', answer: 'A', explanation: 'With no value and no default, the placeholder can\'t be resolved, so the datasource can\'t be configured.' },
   guided: { title: 'Get credentials out of git', prompt: 'Which change lets each teammate use their own DB password without editing committed files? A: commit everyone\'s password in comments; B: change the value to ${DB_PASSWORD} and set DB_PASSWORD locally; C: delete the file.', answer: 'B', hints: ['Placeholders read the environment.', 'The committed file should have no personal values.', 'Answer with the placeholder letter.'] },

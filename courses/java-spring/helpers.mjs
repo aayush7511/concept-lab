@@ -57,7 +57,7 @@ const problem = p => ({
 });
 const exercise = e => ({ prompt: e.prompt, problem: problem(e), starter: e.starter, reference: e.reference, tests: e.tests, hints: e.hints });
 
-function learn(o) {
+export function learn(o) {
   return {
     overview: o.overview,
     goals: o.goals,
@@ -66,6 +66,8 @@ function learn(o) {
     misconception: o.misconception,
     takeaway: o.takeaway,
     tryIt: o.tryIt,
+    ...(o.walkthrough ? { walkthrough: { title: o.walkthrough[0], steps: o.walkthrough[1].map(([code, says]) => ({ ...(code ? { code } : {}), says })) } } : {}),
+    ...(o.deeper ? { deeper: o.deeper.map(([heading, points, code]) => ({ heading, points, ...(code ? { code } : {}) })) } : {}),
   };
 }
 

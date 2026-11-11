@@ -237,16 +237,109 @@ lesson({
 lesson({
   id: 'classes', title: 'new builds an object from a class', file: 'model/User.java',
   explanation: ['A class describes fields; new ClassName(...) builds one object and the constructor fills its fields.', 'User, LoginResponse, and Ride are all classes.'],
-  overview: 'A class is a blueprint. `new Ride("Ana", 3)` runs the constructor, which copies the arguments into the new object\'s fields. Each object has its own fields.',
-  goals: ['Write a constructor that sets fields.', 'Create objects and read their fields.'],
-  diagram: ['Making a Ride', [['class Ride', 'Fields: driver, seats'], ['new Ride("Ana", 3)', 'Constructor runs'], ['r.driver', '"Ana"']]],
+  overview: "A class is a blueprint: it lists the fields (named values) that every object of that kind will have. `new Ride(\"Ana\", 3)` builds one real object from the blueprint and runs its constructor, which fills in the fields. Every object you build keeps its own copy of the fields.",
+  goals: ["Explain the difference between a class, an object, and a field.", "Write a constructor that copies its parameters into fields.", "Create objects with `new` and read their fields with a dot."],
+  diagram: ["Making a Ride, one step at a time", [["class Ride", "The blueprint. It says every Ride has a `driver` (a String) and `seats` (an int)."], ["new Ride(\"Ana\", 3)", "Java makes a fresh Ride and calls its constructor with \"Ana\" and 3."], ["The constructor runs", "`this.driver = driver` and `this.seats = seats` copy those inputs into the new object."], ["Ride r = ...", "The variable `r` now refers to the finished object."], ["r.driver", "The dot reads a field from that object. Here it gives \"Ana\"."]]],
   sections: [
-    ['Constructor', ['Same name as the class, no return type.', '`this.seats = seats` copies the parameter into the field.'], 'Ride(String driver, int seats) {\n    this.driver = driver;\n    this.seats = seats;\n}'],
-    ['Each object is separate', ['Two `new` calls make two objects with their own fields.', 'User has an empty constructor `public User() {}` so JPA can build one and fill it in.']],
+  [
+    "A class is a blueprint",
+    [
+      "A class describes one kind of thing. `class Ride` says what every ride in CometCarpool has: a driver and a number of seats.",
+      "Variables declared inside a class but outside any method are called fields. `String driver;` and `int seats;` are the two fields of Ride.",
+      "Writing the class creates no rides at all. It only describes what a ride will look like once you build one."
+    ],
+    "class Ride {\n    String driver;  // field: who is driving\n    int seats;      // field: open seats\n}"
   ],
-  misconception: 'The class is not an object. Nothing exists until new runs.',
-  takeaway: 'new + constructor = one object with its own fields.',
-  tryIt: 'Create a third Ride and print its driver.',
+  [
+    "The constructor fills in a new object",
+    [
+      "A constructor is a special method that runs once, at the moment an object is built. Its job is to give the new object's fields their starting values.",
+      "It has exactly the same name as the class and no return type, not even `void`. That is how Java tells a constructor apart from a normal method.",
+      "`(String driver, int seats)` are its parameters: the inputs it receives. For `new Ride(\"Ana\", 3)`, the parameter driver is \"Ana\" and seats is 3.",
+      "`this` means \"the object being built right now\". `this.seats` is that object's field, while plain `seats` is the parameter. So `this.seats = seats;` copies the input into the field."
+    ],
+    "Ride(String driver, int seats) {\n    this.driver = driver;  // field = parameter\n    this.seats = seats;    // field = parameter\n}"
+  ],
+  [
+    "new builds it, the dot reads it",
+    [
+      "`new Ride(\"Ana\", 3)` creates the object and runs the constructor. `Ride r = ...` keeps it in a variable of type Ride so you can use it later.",
+      "`r.driver` uses a dot to read a field of that one object. Read it aloud as \"r's driver\".",
+      "Calling `new` twice gives two separate objects. Each has its own driver and seats, so changing one never changes the other."
+    ],
+    "Ride r = new Ride(\"Ana\", 3);\nRide s = new Ride(\"Ben\", 1);\nSystem.out.println(r.driver);  // Ana\nSystem.out.println(s.seats);   // 1"
+  ]
+],
+  walkthrough: [
+  "What happens when `Ride r = new Ride(\"Ana\", 3);` runs",
+  [
+    [
+      "new Ride(\"Ana\", 3)",
+      "Java creates a brand-new Ride. Before the constructor runs, its fields hold default values: driver is null (no text yet) and seats is 0."
+    ],
+    [
+      "Ride(String driver, int seats)",
+      "The constructor starts. Its parameter driver holds \"Ana\" and its parameter seats holds 3."
+    ],
+    [
+      "this.driver = driver;",
+      "Java reads the right side first: the parameter, \"Ana\". It stores that in the new object's driver field. The object is now driver = \"Ana\", seats = 0."
+    ],
+    [
+      "this.seats = seats;",
+      "Same thing for seats: the field becomes 3. The object is now driver = \"Ana\", seats = 3."
+    ],
+    [
+      "Ride r = ...",
+      "The constructor finishes, `new` hands back the finished object, and the variable r now refers to it."
+    ],
+    [
+      "r.driver",
+      "Reading the field later gives \"Ana\", because that is exactly what the constructor stored there."
+    ]
+  ]
+],
+  misconception: "The class is not an object: `class Ride` only describes rides, and no ride exists until `new` runs. Also, `this.seats` (the field) and `seats` (the parameter) are different variables, even though they share a name.",
+  takeaway: "A class describes the fields. `new` builds one object, the constructor fills in its fields, and the dot reads them back.",
+  tryIt: "Create a third Ride and print its driver.",
+  deeper: [
+  [
+    "What if you forget `this.`?",
+    [
+      "Inside the constructor, the parameter `seats` hides the field `seats`, because they have the same name. This is called shadowing.",
+      "If you write `seats = seats;`, Java copies the parameter into itself and never touches the field, so the field keeps its default of 0. It compiles with no error, which is why this bug is easy to miss."
+    ],
+    "Ride(String driver, int seats) {\n    driver = driver;  // bug: parameter = parameter\n    seats = seats;    // the field stays 0\n}"
+  ],
+  [
+    "Default values",
+    [
+      "A field that is never set gets a default: 0 for int and long, false for boolean, and null for any object type such as String. null means \"refers to nothing yet\".",
+      "Local variables inside a method get no default. Java refuses to compile code that reads one before assigning it. Only fields start with an automatic value."
+    ]
+  ],
+  [
+    "Where does the object actually live?",
+    [
+      "`new` sets aside memory for the object in an area called the heap. The variable `r` does not contain the object itself. It holds a reference, which you can picture as the object's address.",
+      "That matters when you copy a variable: `Ride t = r;` copies the address, not the object. The lesson \"Assigning an object copies the reference\" covers this in detail."
+    ]
+  ],
+  [
+    "Why does User have an empty constructor?",
+    [
+      "If you write no constructor at all, Java quietly adds a default one with no parameters. As soon as you write your own constructor, that free one disappears.",
+      "JPA, the library that loads users from the database, has to build a `User` before it knows any values, then fill in the fields. That is why `User` also has `public User() {}`: an empty constructor JPA can always call."
+    ]
+  ],
+  [
+    "One class, several constructors",
+    [
+      "A class can have more than one constructor, as long as their parameter lists differ. Java picks the one whose parameters match what you pass to `new`. This is called overloading."
+    ],
+    "Ride(String driver) {\n    this.driver = driver;\n    this.seats = 4;  // a default seat count\n}"
+  ]
+],
   example: program('Ride r = new Ride("Ana", 3);\nSystem.out.println(r.driver + " " + r.seats);', { types: ride }),
   predict: { code: program('Ride a = new Ride("Ana", 3);\nRide b = new Ride("Ben", 1);\na.seats = 2;\nSystem.out.println(a.seats + " " + b.seats);\nSystem.out.println(b.driver);', { types: ride }), expected: '2 1\nBen\n', explanation: 'a and b are separate objects. Changing a.seats leaves b.seats at 1.' },
   guided: {

@@ -41,3 +41,37 @@
 @media(max-width:1100px){.result-pane{height:400px;min-height:240px}}
 #tutor-panel:has(.chat-message) .tutor-intro{display:none}
 #question{max-height:120px}
+
+@media(min-width:1101px){.lesson-shell{grid-template-rows:minmax(0,1fr)}.lesson-shell>*{min-height:0}}
+
+#chat .chat-message .md{white-space:normal;line-height:1.75}
+#chat .md p{margin:0 0 10px}
+#chat .md p:last-child,#chat .md ul:last-child,#chat .md ol:last-child,#chat .md pre:last-child{margin-bottom:0}
+#chat .md h4{font-size:11px;font-weight:650;color:#e0ebf5;margin:14px 0 6px}
+#chat .md ul,#chat .md ol{margin:0 0 10px;padding-left:18px}
+#chat .md li{margin-bottom:4px}
+#chat .md li::marker{color:#8db775}
+#chat .md strong{color:#e6f0f8;font-weight:650}
+#chat .md em{color:#d3e0ec}
+#chat .md code{font:10.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:#223044;color:#c7e3a8;padding:1px 5px;border-radius:3px}
+#chat .md pre.md-code{position:relative;margin:8px 0 12px;padding:12px;background:#0b121b;border:1px solid #2a3a4e;border-radius:6px;overflow-x:auto;scrollbar-width:thin}
+#chat .md pre.md-code code{background:transparent;padding:0;color:#cfe0ef;font:10.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+#chat .md .md-lang{position:absolute;top:4px;right:8px;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#5f7790}
+
+.learn-walkthrough{margin:24px 0;padding:16px;background:#eef1f6;border:1px solid #d3dae6;border-radius:8px}
+.learn-walkthrough h3{margin:6px 0 12px}
+.learn-walkthrough ol{margin:0;padding-left:20px}
+.learn-walkthrough li{margin-bottom:12px}
+.learn-walkthrough li::marker{color:#5b7090;font-weight:650}
+.narrative .learn-walkthrough .walk-code{display:inline-block;font:11px/1.6 ui-monospace,SFMono-Regular,monospace;background:#dfe5ee;color:#2b3b55;padding:3px 7px;border-radius:4px;margin-bottom:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.learn-walkthrough p{margin:0;font-size:12px;line-height:1.75}
+.learn-deeper{margin:24px 0;border:1px solid #c9d4c0;border-radius:8px;background:#f8faf3}
+.learn-deeper summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.learn-deeper summary::-webkit-details-marker{display:none}
+.learn-deeper summary span{font-weight:650;color:#2f4d33;font-size:13px}
+.learn-deeper summary span::before{content:'▸ ';color:#6b8f5a}
+.learn-deeper[open] summary span::before{content:'▾ '}
+.learn-deeper summary small{font-size:10px;color:#7a8a72}
+.learn-deeper section{padding:0 16px 6px;border-top:1px solid #e1e7da}
+.learn-deeper h4{font-size:12px;color:#22343d;margin:14px 0 8px}
+.learn-deeper p{font-size:12px;line-height:1.8}
