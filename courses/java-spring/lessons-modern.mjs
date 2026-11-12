@@ -1,5 +1,6 @@
 // Records, enums, lambdas, streams, builders, immutable Strings, java.time. One idea each.
 import { lesson, program, checks } from './helpers.mjs';
+import { applyRewrite } from './rewrites.mjs';
 
 const J = 'https://dev.java/learn/';
 const FN = 'import java.util.*;\nimport java.util.function.*;';
@@ -312,4 +313,4 @@ lesson({
   sources: [{ title: 'dev.java: Date and time', url: J + 'date-time/' }],
 }),
 
-];
+].map(applyRewrite);

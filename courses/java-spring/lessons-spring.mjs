@@ -1,5 +1,6 @@
 // Spring nanolessons: one idea each. Verified exercises are reused from spring-source.mjs.
 import { lesson, conceptLesson, program, checks, learn } from './helpers.mjs';
+import { applyRewrite, rewrites } from './rewrites.mjs';
 import { spring as v1, HASH, JWT, sha, jwtHelpers } from './spring-source.mjs';
 
 const S = 'https://docs.spring.io/';
@@ -701,7 +702,7 @@ lesson({
   sources: [{ title: 'Spring MVC: Annotated controllers', url: S + 'spring-framework/reference/web/webmvc/mvc-controller.html' }],
 }),
 
-trimmed('errors', 'One handler turns exceptions into responses', [0, 2]),
+rewritten('errors', 'One handler turns exceptions into responses', rewrites['errors']),
 
 conceptLesson({
   id: 'entities', title: '@Entity maps a class to a table', file: 'model/User.java',
@@ -830,7 +831,7 @@ lesson({
   sources: [{ title: 'Spring Data JPA: Query methods', url: S + 'spring-data/jpa/reference/jpa/query-methods.html' }],
 }),
 
-trimmed('validation', 'Validate input at the edge, collecting every error', [0, 1]),
+rewritten('validation', 'Validate input at the edge, collecting every error', rewrites['validation']),
 
 lesson({
   id: 'hashing', title: 'A hash is a one-way fingerprint', file: 'service/UserService.java',
@@ -1026,6 +1027,6 @@ conceptLesson({
   sources: [{ title: 'Spring Security: Servlet architecture', url: S + 'spring-security/reference/servlet/architecture.html' }],
 }),
 
-trimmed('testing', 'A good test fails when the code is wrong', [1, 3]),
+rewritten('testing', 'A good test fails when the code is wrong', rewrites['testing']),
 
-];
+].map(applyRewrite);
